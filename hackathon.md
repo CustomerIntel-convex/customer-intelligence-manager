@@ -4,7 +4,7 @@
 - **Event:** Convex All Gas Hackathon
 - **What it does:** An autonomous AI employee that continuously listens to customer voice across a real business inbox and the public web, investigates emerging issues with verbatim evidence, remembers past incidents, and reports to the team.
 - **Live app:** https://majestic-orca-275.convex.site
-- **Repo:** none
+- **Repo:** https://github.com/CustomerIntel-convex/customer-intelligence-manager
 - **Frontend:** Convex static hosting
 - **Convex deployment:** https://majestic-orca-275.convex.cloud
 - **Components:** @agentmail/convex, @convex-dev/static-hosting, @convex-dev/workpool

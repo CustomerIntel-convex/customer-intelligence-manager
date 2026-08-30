@@ -58,7 +58,7 @@ First-time setup: open the dashboard → **Demo** → *Provision*. That creates 
 
 **Cost control:** nothing calls Firecrawl on a schedule. The inbound-mail poll (cron, 2 min) is pure AgentMail REST; investigation searches run only when an investigation triggers (demo steps or threshold), max 2 queries each — and only when web research is toggled on in the dashboard. The **Live research burst** button (Demo panel) runs a bounded, operator-controllable 2-minute sweep that makes Firecrawl usage visible on demand; a deterministic keyword pre-filter keeps fuzzy search noise away from the LLM.
 
-**Deployed:** dashboard on Vercel (`customer-intelligence-manager.vercel.app`) against a Convex cloud deployment; the AgentMail webhook points at the Convex `convex.site` URL.
+**Deployed:** dashboard at **https://majestic-orca-275.convex.site** (official Convex static hosting — dashboard, AgentMail webhook and health route on one origin). A legacy Vercel deployment is kept as a secondary.
 
 ## Architecture
 
