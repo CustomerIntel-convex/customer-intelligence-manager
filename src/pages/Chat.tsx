@@ -4,7 +4,7 @@ import { api } from "../lib/convex";
 import { Card, Button } from "../components/ui";
 
 const SUGGESTIONS = [
-  "What are customers complaining about this week?",
+  "What are people complaining about Firecrawl today?",
   "Which issue is most urgent?",
   "Investigate the checkout issue.",
   "Are competitors seeing the same thing?",

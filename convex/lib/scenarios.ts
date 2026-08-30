@@ -170,7 +170,7 @@ export const SCENARIOS: Record<ScenarioKey, ScenarioPack> = {
       {
         name: "General web mentions",
         kind: "web_search",
-        config: { query: "Firecrawl API rate limits OR errors" },
+        config: { query: "Firecrawl review OR complaint OR feature request" },
       },
     ],
     history: {
@@ -280,7 +280,7 @@ export const SCENARIOS: Record<ScenarioKey, ScenarioPack> = {
       {
         name: "General web mentions",
         kind: "web_search",
-        config: { query: "AgentMail API webhook delays OR deliverability" },
+        config: { query: "AgentMail email API review OR feedback" },
       },
     ],
     history: {

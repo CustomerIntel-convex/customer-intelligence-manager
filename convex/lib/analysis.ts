@@ -493,6 +493,7 @@ export type ChatIntent = {
   reply: string;
   investigateIssueTitle: string | null;
   sendEmailReport: boolean;
+  startResearch: boolean;
 };
 
 export async function chatReply(args: {
@@ -509,7 +510,10 @@ export async function chatReply(args: {
       "Be concise (2-6 sentences), quantitative when numbers exist, and cite which evidence backs key claims. " +
       "If the user asks to investigate something: set investigateIssueTitle to the matching issue title " +
       "(must be one of the provided titles) or a short new issue title if it doesn't exist yet. " +
-      "If the user asks to email/send findings: set sendEmailReport=true. Otherwise leave both null/false.",
+      "If the user asks to email/send findings: set sendEmailReport=true. Otherwise leave both null/false. " +
+      "startResearch: set true ONLY when the user asks for fresh/latest/today's customer voice, or asks you " +
+      "to research/scan/search the web or their inbox (e.g. 'what are people saying today?'). When you set it " +
+      "true, say in the reply that you are kicking off live web research now and they can watch the activity feed.",
     user: JSON.stringify(
       {
         question: args.question,
@@ -528,8 +532,9 @@ export async function chatReply(args: {
           reply: { type: "string" },
           investigateIssueTitle: { type: ["string", "null"] },
           sendEmailReport: { type: "boolean" },
+          startResearch: { type: "boolean" },
         },
-        required: ["reply", "investigateIssueTitle", "sendEmailReport"],
+        required: ["reply", "investigateIssueTitle", "sendEmailReport", "startResearch"],
         additionalProperties: false,
       },
     },

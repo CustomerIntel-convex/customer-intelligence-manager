@@ -11,9 +11,21 @@
 
 ## The story (what you say)
 
-> "Companies receive customer signals everywhere — forums, reviews, email. Nobody has time to continuously connect them. We gave Acme AI an employee whose only job is to listen."
+> "Companies receive customer signals everywhere — forums, reviews, email. Nobody has time to continuously connect them. We gave this company an employee whose only job is to listen."
 
-## Step 0 — The agent's memory (~15s)
+## Step 0 — Open in Chat and just ask (~45s)
+
+Open the **Chat** tab and type naturally:
+
+> "Hey — let me know what people are complaining about Firecrawl today."
+
+> "No canned prompts here — the agent reads its live state, and when it realizes it needs fresh intel, it decides to go get it."
+
+*(The agent answers from what it knows and announces it's kicking off live web research. Switch to **Overview**: watch the research sweep fire real web searches across every watch rule — complaints, pricing, feature requests, competitors, churn, outages — with live result counts. Real issues about the real product appear as it works.)*
+
+> "Full spectrum, by the way — it researches whatever the company tells it to care about. Change the watch rules and its research changes."
+
+## Step 1 — The agent's memory (~15s)
 
 Click **Load the agent's memory**.
 

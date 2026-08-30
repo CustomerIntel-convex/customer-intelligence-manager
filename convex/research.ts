@@ -15,14 +15,39 @@ import { clamp, now } from "./lib/util";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SWEEP_GAP_MS = 6_000;
-const ANGLES = [
-  "complaints",
-  "issues this week",
-  "rate limits OR errors",
-  "vs alternatives",
-  "pricing complaints",
-  "outage OR status",
+
+// Fallback when a company has no watch rules yet.
+const FALLBACK_ANGLES = ["complaints OR issues", "vs alternatives", "outage OR status"];
+
+// Map a watch rule to the web-search angle that surfaces that category.
+const RULE_ANGLE: [RegExp, string][] = [
+  [/complaint|pain|broken|bug/i, "complaints OR issues"],
+  [/pricing|price|cost/i, "pricing"],
+  [/missing|feature/i, "feature request OR missing"],
+  [/competitor|compar|alternative/i, "vs alternatives"],
+  [/churn|cancel|leav|downgrade/i, "cancel OR switch"],
+  [/outage|reliab|status/i, "outage OR status"],
 ];
+
+/**
+ * Full-spectrum research: derive the burst's search angles from the company's
+ * active watch rules, so the agent researches whatever it is told to care
+ * about — complaints, pricing, missing features, competitors, churn — not
+ * just one category. Reliability is always included.
+ */
+async function buildAngles(ctx: any, company: any): Promise<string[]> {
+  const rules = (await ctx.runQuery(internal.queries.listWatchRulesInternal, {
+    company: company._id,
+  })) as any[];
+  const angles: string[] = [];
+  for (const rule of rules) {
+    for (const [re, angle] of RULE_ANGLE) {
+      if (re.test(rule.label) && !angles.includes(angle)) angles.push(angle);
+    }
+  }
+  if (!angles.some((a) => a.includes("outage"))) angles.push("outage OR status");
+  return angles.length > 0 ? angles : FALLBACK_ANGLES;
+}
 
 export const startResearch = mutation({
   args: { durationSec: v.optional(v.number()) },
@@ -125,8 +150,9 @@ export const sweep = internalAction({
     );
     const fresh = items.filter((i: any) => !seen.has(i.externalId)).slice(0, 5);
 
-    // 2) one rotating product search — the visible Firecrawl moment
-    const angle = ANGLES[(iteration - 1) % ANGLES.length];
+    // 2) one rotating full-spectrum product search — the visible Firecrawl moment
+    const angles = await buildAngles(ctx, company);
+    const angle = angles[(iteration - 1) % angles.length];
     const queryStr = `${company.product} ${angle}`;
     let hits: any[] = [];
     if (webOn) {

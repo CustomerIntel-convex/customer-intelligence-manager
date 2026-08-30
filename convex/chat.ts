@@ -1,6 +1,6 @@
 import { action, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import * as analysis from "./lib/analysis";
 import { now } from "./lib/util";
 
@@ -41,6 +41,12 @@ export const send = action({
     });
 
     let reply = result.reply;
+
+    // side effect: kick off live web research when asked for fresh voice
+    if (result.startResearch) {
+      await ctx.scheduler.runAfter(0, api.research.startResearch, { durationSec: 120 });
+      reply += `\n\n→ Kicking off live web research on the product now — full spectrum, across the watch rules. Watch the activity feed for the next two minutes.`;
+    }
 
     // side effect: trigger a real investigation
     if (result.investigateIssueTitle) {

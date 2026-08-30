@@ -66,3 +66,13 @@ a real inbound customer email through the signed webhook (classified and cluster
 ramp of public signals with an autonomous investigation, the internal report email, and two
 employee follow-up questions answered with fresh web research (`convex/debug.ts`,
 `convex/demo.ts`).
+
+### 2026-08-30 - working tree
+Made live research full-spectrum: the research burst now derives its rotating web-search
+angles from the company's active watch rules (complaints, pricing, missing features,
+competitors, churn, plus reliability), so it researches whatever the company cares about.
+Added chat-driven autonomy: a natural-language chat message (e.g. asking for today's
+complaints) makes the agent decide to kick off a live research burst itself, answering from
+live state with evidence citations (`convex/research.ts`, `convex/chat.ts`,
+`convex/lib/analysis.ts`). Convex features: actions, mutations, scheduled functions,
+queries.
