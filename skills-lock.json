@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "convex-hackathon-skill": {
+      "source": "get-convex/convex-hackathon-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "a902b76f9e7f292402d4ceb5b9722375fc737cbbaf230dac1cee224e3345469c"
+    }
+  }
+}
