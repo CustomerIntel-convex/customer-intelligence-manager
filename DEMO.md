@@ -16,84 +16,94 @@ click, Convex Auth) — that IS the opening shot: judges see a real login → re
 
 ## The story (what you say)
 
-> "Companies receive customer signals everywhere — forums, reviews, email. Nobody has time to continuously connect them. We gave this company an employee whose only job is to listen."
+> "If you run a hotel, a restaurant, a clinic — your customers are talking right now: reviews, forums, email. Nobody has time to connect all of it. So we hired an employee whose only job is to listen. Meet ours."
 
-## Step 0 — Open in Chat and just ask (~45s)
+## Step 0 — The owner's morning brief + just ask (~60s)
 
-Open the **Chat** tab and type naturally:
+Stay on **Overview**. This is The Marlow House, a 12-room boutique hotel:
 
-> "Hey — let me know what people are complaining about Firecrawl today."
+> "This is the screen the owner reads with her morning coffee: complaints clustering, trends, what needs attention — assembled overnight, by itself."
 
-> "No canned prompts here — the agent reads its live state, and when it realizes it needs fresh intel, it decides to go get it."
+Then open the **Chat** tab and type naturally:
 
-*(The agent answers from what it knows and announces it's kicking off live web research. Switch to **Overview**: watch the research sweep fire real web searches across every watch rule — complaints, pricing, feature requests, competitors, churn, outages — with live result counts. Real issues about the real product appear as it works.)*
+> "Hey — let me know what guests are complaining about today."
 
-> "Full spectrum, by the way — it researches whatever the company tells it to care about. Change the watch rules and its research changes."
+> "No canned prompts — the agent reads its live state, and when it needs fresh intel it decides to go get it."
+
+*(The agent answers from what it knows, announces it's kicking off live web research. Switch to **Overview**: watch full-spectrum sweeps — complaints, pricing, amenities, competitors, cancellations — with live result counts.)*
+
+> "Full spectrum: it researches whatever the business tells it to care about. Change the watch rules and its research changes."
 
 ## Step 1 — The agent's memory (~15s)
 
 Click **Load the agent's memory**.
 
-> "Last month the agent tracked a checkout-latency incident on *desktop* — root cause was a payment-provider timeout, resolved Aug 18. It also watches two stable topics: pricing grumbles (declining) and CSV export requests. This history lives in Convex."
+> "Last month the agent tracked a booking-confirmation failure — the booking engine and the front desk disagreed, resolved Aug 18. It also watches two stable topics: breakfast grumbles (declining) and parking. This history lives in Convex."
 
 *(Overview shows: 0 critical · 0 emerging · 3 stable, and the memory entry in the activity feed.)*
 
-## Step 1 — A customer email arrives (~20s)
+## Step 2 — A guest email arrives (~20s)
 
 Click **A customer email arrives**. Switch to **Overview** — the activity feed updates in realtime.
 
-> "A real email just landed in the agent's inbox — customer.intelligence@agentmail.to. Watch the feed: it classified the email as checkout feedback, urgency 80, and opened an issue."
+> "A real email just landed in the agent's inbox. Watch the feed: classified as a deposit-refund complaint, urgency scored, and an issue opened."
 
-*(Dashboard shows, live: `📡 Detected customer signal: checkout` → `🧠 Opened new issue: Mobile Checkout Latency`.)*
+*(Dashboard shows, live: `📡 Detected customer signal` → `🧠 Opened new issue: Deposit Refund Delays`.)*
 
-## Step 2 — The public discussion ramps (~50s)
+## Step 3 — The public discussion ramps (~50s)
 
 Click **Public discussion ramps up**. Stay on Overview.
 
-> "Meanwhile, public discussions are picking up. Twenty signals arrive over the next few seconds — Reddit, HN, support threads. The agent clusters each one into the issue and recomputes the trend."
+> "Meanwhile the travel forums are picking up. Twenty signals arrive over the next few seconds. The agent clusters each one into the issue and recomputes the trend."
 
 *(Recent changes flips to the issue's trend. When the priority threshold crosses, the agent starts investigating on its own:)*
 
 > "It didn't wait for anyone — the trend crossed its priority threshold, so it's investigating: generating search queries, searching the public web, extracting evidence."
 
-**Optional Firecrawl showcase:** in the Demo panel, hit **▶ Start research** — a bounded 2-minute live research burst. The activity feed shows sweep-by-sweep web searches on the watched product ("searched 'Firecrawl API complaints' — 4 results") with a countdown and live stats. Hit **■ Stop** whenever you've made the point.
+**Optional Firecrawl showcase:** in the Demo panel, hit **▶ Start research** — a bounded 2-minute live research burst with a countdown and live stats. **■ Stop** whenever you've made the point.
 
-## Step 3 — The issue matures (~30s, can overlap with step 2)
+## Step 4 — The issue matures (~30s, can overlap with step 3)
 
 Open the issue from Recent changes.
 
-> "Here's the conclusion. 18 mentions this week vs 3 last. Confidence 92% — driven by 25 pieces of evidence across email, public discussions, and the web. And this is the part that makes it an employee, not a dashboard: it remembered the August desktop incident and noted this one hits a *different segment* — mobile. There's a recommended action."
+> "Here's the conclusion. 18 mentions this week vs 3 last. Confidence 92%. And this is the part that makes it an employee, not a dashboard: it remembered the August booking-confirmation incident and noted this one hits a *different group* — card-paying guests after checkout. There's a recommended action."
 
-*(Point at: trend ↑6.0x, confidence meter, 🧠 Historical context card, evidence timeline with real URLs — Razorpay, Stripe, a Shopify community thread — recommended action.)*
+*(Point at: trend, confidence meter, 🧠 Historical context card, evidence timeline, recommended action.)*
 
-> "And it reported this to the team by itself — Maria got this email." *(Mail page: the report + its body.)*
+> "And it reported this to the owner by itself." *(Mail page: the report + its body.)*
 
-## Step 4 — Maria replies (~70s)
+## Step 5 — The owner replies (~70s)
 
-Click **Maria asks: "Is this only affecting mobile users?"** — a real reply on the report thread.
+Click the owner's question — **"Is this only affecting guests who paid by card at checkout?"** — a real reply on the report thread.
 
-> "Email is two-way. Maria replies on the thread — watch the feed. The agent runs a focused investigation on the question, then answers with evidence."
+> "Email is two-way. The owner replies on the thread — watch the feed. The agent runs a focused investigation on the question, then answers with evidence."
 
-*(After ~1 min, Mail page shows the agent's reply: "…primarily affecting mobile users. All recent direct user reports mention iPhone/Safari, Pixel…" )*
+*(After ~1 min, Mail page shows the agent's reply, grounded in the evidence timeline.)*
 
 
-## Step 5 — Competitor research (~70s)
+## Step 6 — Competitor research (~70s)
 
-Click **Maria asks: "Are competitors seeing the same thing?"**
+Click the owner's second question — **"Are other boutique hotels seeing the same deposit complaints?"**
 
-> "Now it does fresh web research. Its answer: no direct competitor reports, but this matches a known industry-wide pattern — citing sources like Shopify community threads and payment-provider guidance. Evidence, not vibes."
+> "Now it does fresh web research. Its answer: no direct reports about this property, but this matches a known industry-wide pattern — deposit holds and refund delays are among the most-complained-about hotel practices. Evidence, not vibes."
 
-## Step 6 — Chat with the agent (live, optional)
+## Step 7 — Scale proof: watch any brand (~40s, optional)
+
+In the Demo panel, switch **Watched product → Starbucks**, reload memory, and run the chat question again — the same agent now monitors a global brand on the live internet, with real complaints clustering into real issues.
+
+> "A boutique hotel this morning, a global brand the next. Same employee."
+
+## Step 8 — Chat with the agent (live, optional)
 
 Chat page:
 
-- "What are customers complaining about this week?" → quantitative answer from live state
+- "What are guests complaining about this week?" → quantitative answer from live state
 - "Which one is most urgent?" → prioritized answer
 - "Email me the findings." → sends a digest
 
 ## Closing
 
-> "It doesn't summarize what customers said. It listens 24/7 — cron jobs run the monitor cycle every 5 minutes — it investigates what changed, remembers what the company already knows, and tells the team what needs attention."
+> "It doesn't summarize what customers said. It listens 24/7 — the inbox is monitored around the clock — it investigates what changed, remembers what the business already knows, and tells the team what needs attention. The morning brief for anyone with customers."
 
 *(Point at the sidebar: Observes · Investigates · Remembers · Reports.)*
 

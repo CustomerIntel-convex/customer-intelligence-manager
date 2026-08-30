@@ -212,8 +212,9 @@ function Login() {
           </div>
           <h1 className="mt-4 text-lg font-semibold tracking-tight">Customer Intelligence</h1>
           <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-            An autonomous employee that listens to customers across email and the web,
-            investigates what changed, and reports what matters.
+            The morning brief for anyone with customers: an autonomous employee that reads
+            your inbox and the public web every day, investigates what changed, and tells
+            you what to fix.
           </p>
         </div>
         <div className="mt-6 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5">

@@ -8,6 +8,14 @@ const SCENARIO_COPY: Record<
   string,
   { label: string; product: string; step2: string; step3: string; q1: string; q2: string }
 > = {
+  marlow: {
+    label: "The Marlow House",
+    product: "Boutique hotel (everyday business)",
+    step2: "A guest emails: her $150 deposit still hasn't been released three weeks after checkout. The webhook classifies it and a signal is created.",
+    step3: "20 signals arrive: a real deposit-refund complaint pattern. The agent clusters them and auto-investigates with live web research.",
+    q1: 'The owner asks: "Is this only affecting guests who paid by card at checkout?"',
+    q2: 'The owner asks: "Are other boutique hotels seeing the same deposit complaints?"',
+  },
   starbucks: {
     label: "Starbucks",
     product: "Starbucks (everyday consumer brand)",

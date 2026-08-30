@@ -1,6 +1,6 @@
 # 🛰️ Customer Intelligence Manager
 
-An autonomous AI employee for the [Convex All Gas hackathon](https://convex.dev) that continuously listens to the customer's voice across the public web and the company inbox, investigates emerging issues, remembers historical context, and proactively reports what matters to the team.
+**The morning brief for anyone with customers.** An autonomous AI employee — built for the [Convex All Gas hackathon](https://vibeapps.dev/judging/convex-all-gas-hackathon-openai/submit) — that reads your inbox and the public web every day, investigates what changed, remembers what your business already knows, and tells you what to fix. Run a hotel, a clinic, a restaurant, a SaaS: if you have customers talking, it listens.
 
 > It doesn't just summarize what customers said. It listens 24/7, investigates what changed, remembers what the company already knows, and tells the team what needs attention.
 

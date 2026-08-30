@@ -5,7 +5,7 @@
 // for real products, investigations search the product name directly.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type ScenarioKey = "starbucks" | "acme" | "firecrawl" | "agentmail";
+export type ScenarioKey = "marlow" | "starbucks" | "acme" | "firecrawl" | "agentmail";
 
 export type ScenarioPack = {
   key: ScenarioKey;
@@ -44,6 +44,115 @@ export type ScenarioPack = {
 };
 
 export const SCENARIOS: Record<ScenarioKey, ScenarioPack> = {
+  // ───────────────────────────────────────────────────────────────────────
+  // Lead demo: an everyday owner-operated business (hospitality).
+  // The morning brief a real owner reads with coffee.
+  marlow: {
+    key: "marlow",
+    company: {
+      name: "The Marlow House",
+      product: "The Marlow House (boutique hotel)",
+      productKeywords: ["marlow house", "marlow"],
+      realProduct: false,
+    },
+    sources: [
+      { name: "Travel forums", kind: "reddit_search", config: { query: "Marlow House hotel" } },
+      {
+        name: "Review sites",
+        kind: "web_search",
+        config: { query: "Marlow House hotel review OR stay OR complaint" },
+      },
+    ],
+    history: {
+      resolvedIssue: {
+        title: "Booking confirmation failures",
+        description:
+          "Guests arriving with no reservation on file — the booking engine and the front-desk system disagreed for a stretch of August.",
+        severity: "high",
+        affectedSegment: "online bookers",
+        reasoningSummary:
+          "Correlated with channel-manager sync errors between Aug 12–18, mostly on third-party bookings.",
+        resolutionNote:
+          "Root cause: channel-manager stopped syncing after an API change. Fixed Aug 18 with the updated connector and a nightly reconciliation report.",
+        firstDetectedDaysAgo: 17,
+        resolvedDaysAgo: 11,
+      },
+      signals: [
+        {
+          content:
+            "Booked The Marlow House online, got a confirmation email, and the front desk had no record of it when we arrived. They scrambled and found us a room, but wow.",
+          daysBack: 17,
+          source: "web",
+        },
+        {
+          content:
+            "Third-party booking said confirmed, hotel said never received it. Had to rebook over the phone. Fix your sync, Marlow House.",
+          daysBack: 15,
+          source: "reddit",
+          author: "roadweekly",
+        },
+        {
+          content:
+            "Staying at The Marlow House again this month — booking issues from August seem fully resolved, smooth check-in.",
+          daysBack: 11,
+          source: "web",
+        },
+      ],
+      baselines: [
+        {
+          title: "Breakfast complaints",
+          description:
+            "Recurring grumbles that the included breakfast is the same three items and service ends promptly at 9:30.",
+          severity: "low",
+          segment: "leisure guests",
+          recommended: "Chef is trialing a rotating menu — keep watching volume.",
+          thisWeek: 2,
+          prevWeek: 4,
+          signals: [
+            ["Lovely stay but the breakfast is always the same three things.", 19, "web"],
+            ["Breakfast ends at 9:30 sharp — missed it twice after late nights.", 13, "reddit"],
+            ["Food elsewhere in town is better anyway; eat out, skip it.", 6, "web"],
+          ].map(([content, daysBack, source]) => ({
+            content: content as string,
+            daysBack: daysBack as number,
+            source: source as string,
+          })),
+        },
+        {
+          title: "Parking availability",
+          description: "The six-spot lot fills by dinner; guests circle the block with luggage.",
+          severity: "low",
+          segment: "arriving guests",
+          recommended: "Stable — consider a valet partner for summer weekends.",
+          thisWeek: 3,
+          prevWeek: 3,
+          signals: [
+            ["The Marlow House is great but good luck parking within two blocks.", 16, "web"],
+            ["Six parking spots for a 12-room hotel is an interesting choice.", 9, "reddit"],
+            ["Street parking worked out fine off-season, but summer looks rough.", 3, "web"],
+          ].map(([content, daysBack, source]) => ({
+            content: content as string,
+            daysBack: daysBack as number,
+            source: source as string,
+          })),
+        },
+      ],
+    },
+    customerEmail: {
+      subject: "Where is my $150 deposit? Three weeks since checkout",
+      text:
+        "Hello — we checked out of The Marlow House on the 9th and the $150 incidental hold on my card is " +
+        "STILL there, three weeks later. I've called twice and was told 'it's been released, talk to your bank.' " +
+        "My bank says nothing was released. I loved our stay, which is exactly why this is so frustrating — " +
+        "please release the hold or tell me plainly what is happening. We had recommended you to two other couples.\n\n" +
+        "— Claire (room 7, anniversary weekend)",
+    },
+    questions: {
+      q1: "Is this only affecting guests who paid by card at checkout?",
+      q2: "Are other boutique hotels seeing the same deposit complaints?",
+    },
+  },
+
   // ───────────────────────────────────────────────────────────────────────
   // Lead demo: an everyday consumer brand with abundant, real public feedback.
   starbucks: {
@@ -560,22 +669,46 @@ export function rampFor(scenario: ScenarioKey): [string, number, number, string,
     ["$7 for a latte is wild. Starbucks pricing is out of control.", 6, 0, "hacker_news", 55, "all customers"],
     ["Second day of 25-minute mobile order waits at my store. Baristas look slammed.", 4, 12, "reddit", 70, "morning commuters"],
     ["Starbucks rewards devaluation plus longer waits. Loyalty is being tested.", 4, 6, "web", 68, "rewards members"],
-    ["Walked out today \u2014 mobile order queue 30 deep at 8am.", 3, 18, "reddit", 76, "morning commuters"],
+    ["Walked out today — mobile order queue 30 deep at 8am.", 3, 18, "reddit", 76, "morning commuters"],
     ["Anyone else's Starbucks app orders dumping all at once at peak?", 3, 10, "hacker_news", 65, "app users"],
     ["Tried ordering ahead to skip the line. Waited longer than walk-in customers.", 3, 4, "reddit", 74, "app users"],
     ["Mobile order waits are back to August levels at multiple stores near me.", 2, 20, "reddit", 68, "morning commuters"],
-    ["Same \u2014 25 min for a cold brew, no apology, no comp.", 2, 14, "reddit", 66, "morning commuters"],
+    ["Same — 25 min for a cold brew, no apology, no comp.", 2, 14, "reddit", 66, "morning commuters"],
     ["Nearly switched to the indie place next door today. Starbucks morning rush is broken again.", 2, 8, "email", 78, "morning commuters"],
     ["Multiple people in our office complaining about Starbucks morning waits this week.", 2, 2, "hacker_news", 70, "morning commuters"],
-    ["Rewards members are angriest \u2014 we wait AND pay premium.", 1, 20, "reddit", 70, "rewards members"],
+    ["Rewards members are angriest — we wait AND pay premium.", 1, 20, "reddit", 70, "rewards members"],
     ["Two coworkers independently mentioned giving up on Starbucks mornings.", 1, 12, "email", 74, "morning commuters"],
     ["Starbucks mobile ordering feels systematically broken at peak, not a one-off.", 1, 5, "hacker_news", 72, "app users"],
-    ["/r/starbucks thread on morning wait times \u2014 dozens of confirmations this week.", 0, 8, "reddit", 78, "morning commuters"],
+    ["/r/starbucks thread on morning wait times — dozens of confirmations this week.", 0, 8, "reddit", 78, "morning commuters"],
     ["Third day straight of 30-minute waits at my store. Regulars are leaving.", 0, 4, "email", 84, "morning commuters"],
     ["Morning rush wait complaints jumped 5x this week at our location cluster.", 0, 1, "web", 82, "morning commuters"],
   ];
 
+  const marlowRamp: [string, number, number, string, number, string][] = [
+    ["Heard the Marlow House charges a big incidental hold now, anyone know how long it takes to release?", 9, 0, "reddit", 45, "card payers"],
+    ["Nice stay at a boutique hotel last month — still waiting on the deposit refund three weeks later.", 8, 0, "web", 50, "card payers"],
+    ["Do boutique hotels always sit on your deposit this long, or is that a Marlow House thing?", 7, 0, "reddit", 52, "card payers"],
+    ["Called about the $150 hold from our anniversary weekend. 'Talk to your bank.' Cool cool.", 6, 0, "web", 58, "card payers"],
+    ["Loved our stay but the deposit saga after checkout left a sour taste.", 6, 0, "reddit", 55, "past guests"],
+    ["Second call about the missing deposit refund. Still nothing. Weeks now.", 4, 12, "reddit", 70, "card payers"],
+    ["The Marlow House hold on my card finally dropped off after a MONTH. Plan accordingly.", 4, 6, "web", 66, "past guests"],
+    ["Guests on a travel forum: multiple reports of delayed deposit refunds from one boutique property.", 3, 18, "web", 70, "card payers"],
+    ["Our bank says no release was ever initiated. The hotel insists otherwise. Great system.", 3, 10, "reddit", 74, "card payers"],
+    ["Anniversary ruined a bit by chasing $150 for weeks after we got home.", 3, 4, "email", 78, "past guests"],
+    ["Deposit refund still missing two and a half weeks after checkout.", 2, 20, "reddit", 68, "card payers"],
+    ["Same experience — told it was released, it was not.", 2, 14, "web", 66, "card payers"],
+    ["We recommended The Marlow House to friends and now feel awkward about it after this deposit mess.", 2, 8, "email", 78, "past guests"],
+    ["Anyone else fighting a Marlow House deposit hold? It's not just me apparently.", 2, 2, "reddit", 70, "card payers"],
+    ["Travel thread asking how long boutique hotels take to release deposits — our case: 3 weeks and counting.", 1, 20, "web", 70, "card payers"],
+    ["My sister's deposit from the same hotel released in days in June. Something changed.", 1, 12, "email", 74, "card payers"],
+    ["Three weeks, zero refund, zero callback despite promises.", 1, 5, "reddit", 76, "card payers"],
+    ["Forum post: 'avoid prepaying incidentals at this otherwise lovely boutique hotel.'", 0, 8, "web", 78, "card payers"],
+    ["Chasing the deposit has cost me more time than the stay was worth. Escalating to the card issuer tomorrow.", 0, 4, "email", 84, "card payers"],
+    ["Deposit refund complaints about the same property keep stacking up this week.", 0, 1, "reddit", 82, "card payers"],
+  ];
+
   return {
+    marlow: marlowRamp,
     starbucks: starbucksRamp,
     firecrawl: firecrawlRamp,
     agentmail: agentmailRamp,
