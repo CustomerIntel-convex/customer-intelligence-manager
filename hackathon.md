@@ -76,3 +76,14 @@ complaints) makes the agent decide to kick off a live research burst itself, ans
 live state with evidence citations (`convex/research.ts`, `convex/chat.ts`,
 `convex/lib/analysis.ts`). Convex features: actions, mutations, scheduled functions,
 queries.
+
+### 2026-08-30 - working tree
+Bursts now open with an inbox scan — an OpenAI summary of recent customer mail logged to
+the activity feed — and the chat agent can re-aim its entire watch on any product named in
+conversation: identity, keywords and monitored sources are rebuilt and fresh full-spectrum
+research starts on the new product. Verified live by pointing it at two products it had
+never seen; real complaint threads clustered into issues both times. Also fixed burst
+search pacing and rate-limit retry so free-tier caps stop silently emptying results
+(`convex/research.ts`, `convex/chat.ts`, `convex/demo.ts`, `convex/lib/firecrawl.ts`,
+`convex/lib/analysis.ts`). Convex features: actions, internal queries, mutations,
+scheduled functions.

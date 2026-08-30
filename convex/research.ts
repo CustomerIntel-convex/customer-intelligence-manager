@@ -1,6 +1,6 @@
-import { internalAction, internalMutation, mutation, query } from "./_generated/server";
+import { internalAction, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { internal } from "./_generated/api";
+import { components, internal } from "./_generated/api";
 import { fetchSource } from "./agent";
 import * as firecrawl from "./lib/firecrawl";
 import * as analysis from "./lib/analysis";
@@ -10,11 +10,13 @@ import { clamp, now } from "./lib/util";
 // Live research burst — bounded, visible Firecrawl usage for demos.
 // Start opens a timed session; a chained action sweeps sources + runs one
 // rotating product search per iteration until the window closes or Stop is
-// pressed. Each sweep is logged to the activity feed so the audience can see
-// Firecrawl working in realtime.
+// pressed. Each burst also scans the agent's inbox and summarizes what
+// customers are saying there.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SWEEP_GAP_MS = 6_000;
+// Sweep cadence: one search every ~14s keeps a 2-minute burst (~8 sweeps)
+// comfortably under Firecrawl's per-minute rate cap.
+const SWEEP_GAP_MS = 14_000;
 
 // Fallback when a company has no watch rules yet.
 const FALLBACK_ANGLES = ["complaints OR issues", "vs alternatives", "outage OR status"];
@@ -73,9 +75,76 @@ export const startResearch = mutation({
       detail: "Fetching monitored sources + rotating product searches",
       startedAt: now(),
     });
+    await ctx.scheduler.runAfter(0, internal.research.scanInbox, {});
     await ctx.scheduler.runAfter(0, internal.research.sweep, {});
     return durationSec;
   },
+});
+
+/**
+ * Inbox scan: summarize what customers are saying in the agent's recent mail
+ * (only mail belonging to the active scenario) and log it to the feed.
+ */
+export const scanInbox = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    const company = (await ctx.runQuery(internal.queries.getCompanyInternal, {})) as any;
+    if (!company?.agentInbox) return;
+
+    const activeScenario = company.scenario ?? "acme";
+    const routed = (await ctx.runQuery(internal.research.listRoutedInternal, {})) as any[];
+    const routedForScenario = new Set(
+      routed.filter((r) => (r.scenario ?? "acme") === activeScenario).map((r) => r.messageId)
+    );
+
+    const all = (await ctx.runQuery(components.agentmail.lib.listInboundMessages, {
+      inboxId: company.agentInbox,
+    })) as any[];
+    const agentAddr = (company.agentInbox ?? "").toLowerCase();
+    const recent = all
+      .filter(
+        (m: any) =>
+          !(m.from ?? "").toLowerCase().includes(agentAddr) &&
+          routedForScenario.has(m.messageId)
+      )
+      .sort((a: any, b: any) => b.timestamp - a.timestamp)
+      .slice(0, 12);
+
+    if (recent.length === 0) {
+      await ctx.runMutation(internal.state.logTask, {
+        company: company._id,
+        type: "observe",
+        status: "complete",
+        label: "Scanned inbox — no recent customer mail for this product yet",
+      });
+      return;
+    }
+
+    const summary = await analysis.summarizeInbox({
+      items: recent.map((m: any) => ({
+        from: m.from,
+        subject: m.subject ?? "",
+        text: (m.extractedText ?? m.text ?? m.preview ?? "").slice(0, 400),
+      })),
+    });
+
+    await ctx.runMutation(internal.state.logTask, {
+      company: company._id,
+      type: "observe",
+      status: "complete",
+      label: `Scanned inbox — ${recent.length} recent customer emails`,
+      detail: summary,
+    });
+  },
+});
+
+export const listRoutedInternal = internalQuery({
+  args: {},
+  handler: async (ctx) =>
+    (await ctx.db.query("emailRouting").collect()).map((r) => ({
+      messageId: r.messageId,
+      scenario: r.scenario,
+    })),
 });
 
 export const stopResearch = mutation({
@@ -182,7 +251,9 @@ export const sweep = internalAction({
 
     let signalsFound = 0;
     if (candidates.length > 0) {
-      const keywords = ((company.productKeywords ?? []) as string[]).map((k: string) => k.toLowerCase());
+      const keywords = ((company.productKeywords ?? []) as string[]).map((k: string) =>
+        k.toLowerCase()
+      );
       const plausible = candidates.filter((c: any) =>
         keywords.some((k: string) => `${c.title ?? ""} ${c.content}`.toLowerCase().includes(k))
       );

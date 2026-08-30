@@ -41,13 +41,18 @@ async function call<T>(path: string, body: unknown, timeoutMs = 45_000): Promise
       body: JSON.stringify(body),
       signal: controller.signal,
     });
+    if (res.status === 429) {
+      // rate limit — signal the caller so it can back off and retry
+      throw new Error("FIRECRAWL_RATE_LIMITED");
+    }
     const json = (await res.json()) as { success: boolean; data?: T; error?: string };
     if (!res.ok || !json.success) {
       console.warn(`Firecrawl ${path} failed (${res.status}): ${(json.error ?? "").slice(0, 120)}`);
-      return null; // degrade gracefully — quota, rate limits, outages
+      return null; // degrade gracefully — quota, outages
     }
     return json.data as T;
   } catch (e: any) {
+    if (e?.message === "FIRECRAWL_RATE_LIMITED") throw e;
     console.warn(`Firecrawl ${path} error: ${e.message?.slice(0, 120)}`);
     return null;
   } finally {
@@ -71,13 +76,19 @@ export async function search(query: string, limit = 6): Promise<SearchHit[]> {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** Search with one retry + backoff on rate limits (free-tier friendly). */
+/** Search with one retry after a real backoff when rate limited. */
 export async function searchWithBackoff(query: string, limit = 4): Promise<SearchHit[]> {
   try {
-    const first = await search(query, limit);
-    if (first.length > 0) return first;
-    return first; // empty either because disabled or genuinely no results
-  } catch {
+    return await search(query, limit);
+  } catch (e: any) {
+    if (String(e?.message).includes("FIRECRAWL_RATE_LIMITED")) {
+      await sleep(25_000);
+      try {
+        return await search(query, limit);
+      } catch {
+        return [];
+      }
+    }
     return [];
   }
 }

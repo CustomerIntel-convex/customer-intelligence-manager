@@ -42,10 +42,22 @@ export const send = action({
 
     let reply = result.reply;
 
-    // side effect: kick off live web research when asked for fresh voice
-    if (result.startResearch) {
+    // side effect: re-aim the whole watch when the user names another product
+    if (result.watchProduct) {
+      const product = result.watchProduct.trim().slice(0, 60);
+      await ctx.runMutation(api.demo.resetDemo, {});
+      await ctx.runMutation(internal.demo.reconfigureProductInternal, { product });
       await ctx.scheduler.runAfter(0, api.research.startResearch, { durationSec: 120 });
-      reply += `\n\n→ Kicking off live web research on the product now — full spectrum, across the watch rules. Watch the activity feed for the next two minutes.`;
+      reply =
+        `Got it — switching my watch to "${product}". Sources re-aimed, memory of the old ` +
+        `product archived, and I'm starting fresh full-spectrum research on it now.\n\n` +
+        result.reply;
+    }
+
+    // side effect: kick off live web research when asked for fresh voice
+    if (result.startResearch && !result.watchProduct) {
+      await ctx.scheduler.runAfter(0, api.research.startResearch, { durationSec: 120 });
+      reply += `\n\n→ Kicking off live web research on the product now — full spectrum, across the watch rules, plus an inbox scan. Watch the activity feed for the next two minutes.`;
     }
 
     // side effect: trigger a real investigation

@@ -1,4 +1,4 @@
-import { mutation, action } from "./_generated/server";
+import { mutation, action, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { SCENARIOS, ScenarioKey, rampFor } from "./lib/scenarios";
@@ -242,6 +242,38 @@ export const seedPublicSignals = mutation({
       scheduled++;
     }
     return { scheduled };
+  },
+});
+
+/**
+ * Re-aim the whole watch at an arbitrary product (judge tests, chat requests):
+ * company identity, keywords and monitored sources are derived from the
+ * product name; story data is expected to be reset by the caller.
+ */
+export const reconfigureProductInternal = internalMutation({
+  args: { product: v.string() },
+  handler: async (ctx, args) => {
+    const product = args.product.trim().slice(0, 60);
+    if (product.length < 2) throw new Error("Product name too short");
+    const company = await ctx.db.query("companies").first();
+    if (!company) throw new Error("Run setup first");
+    await ctx.runMutation(internal.state.configureScenarioInternal, {
+      scenario: "custom",
+      name: product,
+      product,
+      productKeywords: [product.toLowerCase()],
+      realProduct: true,
+      sources: [
+        { name: "Hacker News mentions", kind: "hn", config: { query: product } },
+        { name: "Reddit discussions", kind: "reddit_search", config: { query: product } },
+        {
+          name: "General web mentions",
+          kind: "web_search",
+          config: { query: `${product} review OR complaint OR feedback` },
+        },
+      ],
+    });
+    return `watching: ${product}`;
   },
 });
 

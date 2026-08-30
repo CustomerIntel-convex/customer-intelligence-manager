@@ -489,11 +489,48 @@ export async function answerFromContext(args: {
 
 // ── 11. Chat intent detection (dashboard) ───────────────────────────────────
 
+export async function summarizeInbox(args: {
+  items: { from: string; subject: string; text: string }[];
+}): Promise<string> {
+  const out = await chatJSON<{ summary: string; themes: { theme: string; count: number }[] }>({
+    model: MODEL_FAST,
+    system:
+      "Summarize what customers are saying in these recent emails to a company's support/" +
+      "intelligence inbox. summary: 1-2 sentences on the overall picture. themes: the distinct " +
+      "topics with message counts. Grounded only in the emails; no invention.",
+    user: JSON.stringify(args.items, null, 0),
+    schema: {
+      name: "inbox_summary",
+      schema: {
+        type: "object",
+        properties: {
+          summary: { type: "string" },
+          themes: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: { theme: { type: "string" }, count: { type: "number" } },
+              required: ["theme", "count"],
+              additionalProperties: false,
+            },
+          },
+        },
+        required: ["summary", "themes"],
+        additionalProperties: false,
+      },
+    },
+    maxTokens: 600,
+  });
+  const themes = out.themes.map((t) => `${t.theme} (${t.count})`).join(", ");
+  return `${out.summary} Themes: ${themes}`;
+}
+
 export type ChatIntent = {
   reply: string;
   investigateIssueTitle: string | null;
   sendEmailReport: boolean;
   startResearch: boolean;
+  watchProduct: string | null;
 };
 
 export async function chatReply(args: {
@@ -513,7 +550,10 @@ export async function chatReply(args: {
       "If the user asks to email/send findings: set sendEmailReport=true. Otherwise leave both null/false. " +
       "startResearch: set true ONLY when the user asks for fresh/latest/today's customer voice, or asks you " +
       "to research/scan/search the web or their inbox (e.g. 'what are people saying today?'). When you set it " +
-      "true, say in the reply that you are kicking off live web research now and they can watch the activity feed.",
+      "true, say in the reply that you are kicking off live web research now and they can watch the activity feed. " +
+      "watchProduct: if the user names a product or company that is NOT the one you currently watch (see the " +
+      "context header), set it to that product's name — you will re-aim your whole watch on it and start fresh " +
+      "research. null if they are asking about your current product or no product is named.",
     user: JSON.stringify(
       {
         question: args.question,
@@ -533,8 +573,9 @@ export async function chatReply(args: {
           investigateIssueTitle: { type: ["string", "null"] },
           sendEmailReport: { type: "boolean" },
           startResearch: { type: "boolean" },
+          watchProduct: { type: ["string", "null"] },
         },
-        required: ["reply", "investigateIssueTitle", "sendEmailReport", "startResearch"],
+        required: ["reply", "investigateIssueTitle", "sendEmailReport", "startResearch", "watchProduct"],
         additionalProperties: false,
       },
     },
