@@ -1,9 +1,14 @@
 # Demo Runbook — 3-Minute Walkthrough
 
 **Setup (before the demo starts):**
-- Dashboard running: `npm run dev` → http://localhost:5173
+- Dashboard running: `npm run dev` → http://localhost:5173 (or the live convex.site URL)
 - Provision done once: Demo panel → **Provision (setup)** (creates inboxes, company, sources)
 - Reset to a clean state: Demo panel → **Reset demo data**
+
+**Video style:** talk less, click more — let the product move; narrate one line per screen.
+
+**First click of the video:** open the live URL → hit **"Enter the demo workspace"** (one
+click, Convex Auth) — that IS the opening shot: judges see a real login → real app.
 
 > Everything below runs the **real** pipeline: real emails through AgentMail, real web research through Firecrawl, real analysis through OpenAI, realtime state in Convex. No mocks.
 

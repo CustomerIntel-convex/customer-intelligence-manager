@@ -23,6 +23,7 @@ const ROUTING_META: Record<string, { label: string; cls: string }> = {
 
 const SCENARIO_LABELS: Record<string, string> = {
   acme: "Acme AI",
+  starbucks: "Starbucks",
   firecrawl: "Firecrawl",
   agentmail: "AgentMail",
   archived: "Archived",
@@ -133,7 +134,7 @@ export default function Mail() {
     counts[s] = (counts[s] ?? 0) + 1;
   }
 
-  const tabs = ["all", "acme", "firecrawl", "agentmail", "archived"];
+  const tabs = ["all", "starbucks", "acme", "firecrawl", "agentmail", "archived"];
 
   return (
     <div className="space-y-5">

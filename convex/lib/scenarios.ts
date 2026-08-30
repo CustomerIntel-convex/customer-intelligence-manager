@@ -5,7 +5,7 @@
 // for real products, investigations search the product name directly.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type ScenarioKey = "acme" | "firecrawl" | "agentmail";
+export type ScenarioKey = "starbucks" | "acme" | "firecrawl" | "agentmail";
 
 export type ScenarioPack = {
   key: ScenarioKey;
@@ -44,6 +44,115 @@ export type ScenarioPack = {
 };
 
 export const SCENARIOS: Record<ScenarioKey, ScenarioPack> = {
+  // ───────────────────────────────────────────────────────────────────────
+  // Lead demo: an everyday consumer brand with abundant, real public feedback.
+  starbucks: {
+    key: "starbucks",
+    company: {
+      name: "Starbucks",
+      product: "Starbucks",
+      productKeywords: ["starbucks"],
+      realProduct: true,
+    },
+    sources: [
+      { name: "Hacker News mentions", kind: "hn", config: { query: "Starbucks" } },
+      { name: "Reddit discussions", kind: "reddit_search", config: { query: "Starbucks" } },
+      {
+        name: "General web mentions",
+        kind: "web_search",
+        config: { query: "Starbucks review OR complaint OR feedback" },
+      },
+    ],
+    history: {
+      resolvedIssue: {
+        title: "Mobile order wait times (morning rush)",
+        description:
+          "Mobile orders piling up with 20–30 minute waits at peak morning hours, customers skipping the line and leaving.",
+        severity: "high",
+        affectedSegment: "morning commuters",
+        reasoningSummary:
+          "Correlated with store-level staffing gaps and order-batching complaints Aug 12–18.",
+        resolutionNote:
+          "Root cause: understaffed peak shifts plus sequential order batching. Fixed Aug 18 with a staffing rebalance and parallel drink sequencing in flagship stores.",
+        firstDetectedDaysAgo: 17,
+        resolvedDaysAgo: 11,
+      },
+      signals: [
+        {
+          content:
+            "Starbucks mobile order said 10 minutes, waited 28. The barista said everyone's app orders dump at 8am.",
+          daysBack: 17,
+          source: "reddit",
+          author: "commuter_kay",
+        },
+        {
+          content:
+            "Walked out of a Starbucks this morning — mobile order queue was 30 deep and nobody called names.",
+          daysBack: 15,
+          source: "web",
+          author: undefined,
+        },
+        {
+          content: "Morning rush wait times finally back to normal at my store this week.",
+          daysBack: 11,
+          source: "reddit",
+          author: "latte_logic",
+        },
+      ],
+      baselines: [
+        {
+          title: "Rewards program changes",
+          description:
+            "Ongoing frustration about stars devaluation and fewer redeemable items after the rewards update.",
+          severity: "low",
+          segment: "rewards members",
+          recommended: "Track volume; comms already planned for the next app release.",
+          thisWeek: 2,
+          prevWeek: 4,
+          signals: [
+            ["The new stars math is a downgrade, my free drink now takes 3 weeks.", 19, "reddit"],
+            ["Rewards feels like a consolation prize lately.", 13, "web"],
+            ["Double-star days are the only thing keeping me loyal.", 6, "reddit"],
+          ].map(([content, daysBack, source]) => ({
+            content: content as string,
+            daysBack: daysBack as number,
+            source: source as string,
+          })),
+        },
+        {
+          title: "Store seating limits",
+          description: "Customers complain about fewer seats and laptop bans at remodeled stores.",
+          severity: "low",
+          segment: "remote workers",
+          recommended: "Stable — watch for a second wave when more stores remodel.",
+          thisWeek: 3,
+          prevWeek: 3,
+          signals: [
+            ["My Starbucks removed half the seating, it's takeout-only now.", 16, "reddit"],
+            ["No more laptops means no more Starbucks for me on workdays.", 9, "web"],
+            ["The remodel is nice but I can't find a seat at 10am.", 3, "reddit"],
+          ].map(([content, daysBack, source]) => ({
+            content: content as string,
+            daysBack: daysBack as number,
+            source: source as string,
+          })),
+        },
+      ],
+    },
+    customerEmail: {
+      subject: "Mobile order wait times are broken again — this morning was the worst yet",
+      text:
+        "Hi — I order on the app every weekday from the same store. Since Monday the morning waits are back to " +
+        "25–35 minutes even though the app says 'ready in 5'. Today I watched three people walk out. " +
+        "Whatever you fixed in August feels like it's undone. I'm a daily customer and I'm about to switch " +
+        "to the coffee shop next door.\n\n— Rachel, rewards member since 2019",
+    },
+    questions: {
+      q1: "Is this only affecting morning-rush stores?",
+      q2: "Are competitors seeing the same thing?",
+    },
+  },
+
   // ───────────────────────────────────────────────────────────────────────
   acme: {
     key: "acme",
@@ -443,5 +552,33 @@ export function rampFor(scenario: ScenarioKey): [string, number, number, string,
     ["Mobile checkout timeout count on our side jumped 5x this week.", 0, 1, "hacker_news", 82, "mobile users"],
   ];
 
-  return { firecrawl: firecrawlRamp, agentmail: agentmailRamp, acme: acmeRamp }[scenario];
+  const starbucksRamp: [string, number, number, string, number, string][] = [
+    ["Mobile order at my Starbucks took 20 minutes this morning. The app said 5.", 9, 0, "reddit", 45, "morning commuters"],
+    ["Is it just me or are Starbucks morning lines insane again this week?", 8, 0, "reddit", 50, "morning commuters"],
+    ["Starbucks app wait times creeping back up at peak hours.", 7, 0, "hacker_news", 48, "app users"],
+    ["My mobile order was late 3 days in a row. About done with morning runs.", 6, 0, "reddit", 58, "morning commuters"],
+    ["$7 for a latte is wild. Starbucks pricing is out of control.", 6, 0, "hacker_news", 55, "all customers"],
+    ["Second day of 25-minute mobile order waits at my store. Baristas look slammed.", 4, 12, "reddit", 70, "morning commuters"],
+    ["Starbucks rewards devaluation plus longer waits. Loyalty is being tested.", 4, 6, "web", 68, "rewards members"],
+    ["Walked out today \u2014 mobile order queue 30 deep at 8am.", 3, 18, "reddit", 76, "morning commuters"],
+    ["Anyone else's Starbucks app orders dumping all at once at peak?", 3, 10, "hacker_news", 65, "app users"],
+    ["Tried ordering ahead to skip the line. Waited longer than walk-in customers.", 3, 4, "reddit", 74, "app users"],
+    ["Mobile order waits are back to August levels at multiple stores near me.", 2, 20, "reddit", 68, "morning commuters"],
+    ["Same \u2014 25 min for a cold brew, no apology, no comp.", 2, 14, "reddit", 66, "morning commuters"],
+    ["Nearly switched to the indie place next door today. Starbucks morning rush is broken again.", 2, 8, "email", 78, "morning commuters"],
+    ["Multiple people in our office complaining about Starbucks morning waits this week.", 2, 2, "hacker_news", 70, "morning commuters"],
+    ["Rewards members are angriest \u2014 we wait AND pay premium.", 1, 20, "reddit", 70, "rewards members"],
+    ["Two coworkers independently mentioned giving up on Starbucks mornings.", 1, 12, "email", 74, "morning commuters"],
+    ["Starbucks mobile ordering feels systematically broken at peak, not a one-off.", 1, 5, "hacker_news", 72, "app users"],
+    ["/r/starbucks thread on morning wait times \u2014 dozens of confirmations this week.", 0, 8, "reddit", 78, "morning commuters"],
+    ["Third day straight of 30-minute waits at my store. Regulars are leaving.", 0, 4, "email", 84, "morning commuters"],
+    ["Morning rush wait complaints jumped 5x this week at our location cluster.", 0, 1, "web", 82, "morning commuters"],
+  ];
+
+  return {
+    starbucks: starbucksRamp,
+    firecrawl: firecrawlRamp,
+    agentmail: agentmailRamp,
+    acme: acmeRamp,
+  }[scenario];
 }

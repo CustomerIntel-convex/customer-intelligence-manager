@@ -7,9 +7,9 @@
 - **Repo:** https://github.com/CustomerIntel-convex/customer-intelligence-manager
 - **Frontend:** Convex static hosting
 - **Convex deployment:** https://majestic-orca-275.convex.cloud
-- **Components:** @agentmail/convex, @convex-dev/static-hosting, @convex-dev/workpool
-- **Convex features:** schema, tables, indexes, queries, mutations, actions, HTTP actions, crons, scheduled functions, realtime queries
-- **Auth:** none
+- **Components:** @agentmail/convex, @convex-dev/auth, @convex-dev/static-hosting, @convex-dev/workpool
+- **Convex features:** schema, tables, indexes, queries, mutations, actions, HTTP actions, crons, scheduled functions, realtime queries, auth
+- **Auth:** Convex Auth
 - **AI models:** gpt-4.1, gpt-4o-mini
 - **Started:** 2026-08-29T19:00:00Z
 - **Last updated:** 2026-08-30T13:00:00Z
@@ -76,6 +76,14 @@ complaints) makes the agent decide to kick off a live research burst itself, ans
 live state with evidence citations (`convex/research.ts`, `convex/chat.ts`,
 `convex/lib/analysis.ts`). Convex features: actions, mutations, scheduled functions,
 queries.
+
+### 2026-08-30 - working tree
+Added Convex Auth (password provider) with a one-click demo sign-in so judges get the full
+authenticated workspace with zero friction; auth tables, JWT session tokens and the
+sign-in routes run on the same deployment. Also added an everyday consumer-brand scenario
+(Starbucks) as the lead demo — the agent watches real public complaints about a real brand
+(`convex/auth.ts`, `convex/auth.config.ts`, `convex/lib/scenarios.ts`, `src/App.tsx`).
+Convex features: auth, registered component, schema.
 
 ### 2026-08-30 - working tree
 Bursts now open with an inbox scan — an OpenAI summary of recent customer mail logged to

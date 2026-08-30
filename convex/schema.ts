@@ -1,13 +1,18 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { authTables } from "@convex-dev/auth/server";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Customer Intelligence Manager — core operational state.
 // The agent's persistent memory: everything it has observed, concluded,
 // investigated and reported lives here and drives the realtime dashboard.
+// authTables: Convex Auth users/accounts/sessions.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default defineSchema({
+  ...authTables,
+
+  // The company the agent works for (single-tenant for the hackathon).
   // The company the agent works for (single-tenant for the hackathon).
   companies: defineTable({
     name: v.string(),

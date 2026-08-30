@@ -8,6 +8,14 @@ const SCENARIO_COPY: Record<
   string,
   { label: string; product: string; step2: string; step3: string; q1: string; q2: string }
 > = {
+  starbucks: {
+    label: "Starbucks",
+    product: "Starbucks (everyday consumer brand)",
+    step2: "A daily customer emails about mobile-order waits being broken again. The webhook classifies it and a signal is created.",
+    step3: "20 signals arrive: a real complaints pattern. The agent clusters them and auto-investigates with live web research on the brand.",
+    q1: 'Maria asks: "Is this only affecting morning-rush stores?"',
+    q2: 'Maria asks: "Are competitors seeing the same thing?"',
+  },
   acme: {
     label: "Acme AI",
     product: "Acme Assistant (fictional)",

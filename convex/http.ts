@@ -1,10 +1,14 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { agentmail } from "./email";
+import { auth } from "./auth";
 import { registerStaticRoutes } from "@convex-dev/static-hosting";
 import { components } from "./_generated/api";
 
 const http = httpRouter();
+
+// Convex Auth routes (sign in / sign up / token refresh).
+auth.addHttpRoutes(http);
 
 // AgentMail webhook ingest — Svix-verified and deduped by the component.
 http.route({
