@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useAction, useQuery } from "convex/react";
 import { api } from "../lib/convex";
-import { Card, SectionTitle, LiveDot, Button } from "../components/ui";
+import { Kicker, LiveDot, Button } from "../components/ui";
 
 /** Per-scenario UI copy (data lives in convex/lib/scenarios.ts). */
 const SCENARIO_COPY: Record<
@@ -71,8 +71,8 @@ function LiveResearchCard() {
   const ss = Math.floor((remaining % 60000) / 1000);
 
   return (
-    <Card className={`p-4 ${status.running ? "running-sweep" : ""}`}>
-      <SectionTitle
+    <div className={`ruled pt-4 ${status.running ? "running-sweep" : ""}`}>
+      <KickerHead
         right={
           status.running ? (
             <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#f5a623]">
@@ -82,7 +82,7 @@ function LiveResearchCard() {
         }
       >
         Live research burst
-      </SectionTitle>
+      </KickerHead>
 
       <div className="flex items-center justify-between gap-3">
         <p className="max-w-[200px] text-[11px] leading-relaxed text-zinc-500">
@@ -160,7 +160,7 @@ function LiveResearchCard() {
           Web research is paused — enable it above or sweeps will only use free sources.
         </p>
       )}
-    </Card>
+    </div>
   );
 }
 function WebResearchCard() {
@@ -172,8 +172,8 @@ function WebResearchCard() {
   const credits = status?.credits;
 
   return (
-    <Card className="p-4">
-      <SectionTitle>Web research · Firecrawl</SectionTitle>
+    <div className="ruled pt-4">
+      <KickerHead>Web research · Firecrawl</KickerHead>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <span
@@ -220,7 +220,7 @@ function WebResearchCard() {
           ? "Investigations search the live web via Firecrawl. Monitor cycles also query paid sources."
           : "Investigations complete from stored email & discussion evidence and note the pause. Free HN monitoring keeps running."}
       </p>
-    </Card>
+    </div>
   );
 }
 
@@ -331,10 +331,10 @@ export default function DemoPanel() {
   return (
       <div className="space-y-5">
         {/* scenario switcher */}
-        <Card className="p-4">
-          <SectionTitle right={<span className="text-[10px] text-zinc-500">{copy.product}</span>}>
+        <div className="ruled pt-4">
+          <KickerHead right={<span className="text-[10px] text-zinc-500">{copy.product}</span>}>
             Watched product
-          </SectionTitle>
+          </KickerHead>
           <div className="flex flex-wrap gap-2">
             {Object.entries(SCENARIO_COPY).map(([key, sc]) => (
               <button
@@ -356,7 +356,7 @@ export default function DemoPanel() {
             Switching rewrites the company identity, monitored sources and story data —
             inboxes stay the same. Steps below then run the scenario.
           </p>
-        </Card>
+        </div>
 
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-[13px] text-zinc-400">
@@ -368,7 +368,7 @@ export default function DemoPanel() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+        <div className="lg:col-span-2">
           <div className="border-b border-white/[0.06] px-5 py-3.5">
             <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
               3-minute walkthrough
@@ -437,14 +437,14 @@ export default function DemoPanel() {
               onClick={run("Reset demo data", () => reset({}))}
             />
           </div>
-        </Card>
+        </div>
 
         <div className="space-y-4">
           <LiveResearchCard />
           <WebResearchCard />
 
-          <Card className="p-4">
-            <SectionTitle>Live state</SectionTitle>
+          <div className="ruled pt-4">
+            <KickerHead>Live state</KickerHead>
             <dl className="space-y-2.5 text-[12px]">
               {[
                 ["Agent inbox", company?.agentInbox ?? "—", "mono"],
@@ -468,10 +468,10 @@ export default function DemoPanel() {
                 </div>
               ))}
             </dl>
-          </Card>
+          </div>
 
-          <Card className="p-4">
-            <SectionTitle>Monitored sources</SectionTitle>
+          <div className="ruled pt-4">
+            <KickerHead>Monitored sources</KickerHead>
             <ul className="space-y-2">
               {company?.sources?.map((s: any) => (
                 <li key={s._id} className="flex items-center justify-between text-[11.5px]">
@@ -495,9 +495,18 @@ export default function DemoPanel() {
               monitoring is on-demand (budget-friendly); HN uses a free direct feed. Firecrawl web
               research is toggleable via <span className="font-mono">FIRECRAWL_ENABLED</span>.
             </p>
-          </Card>
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function KickerHead({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
+  return (
+    <div className="mb-3 flex items-baseline justify-between">
+      <div className="kicker">{children}</div>
+      {right}
     </div>
   );
 }

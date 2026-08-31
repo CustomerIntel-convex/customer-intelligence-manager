@@ -1,10 +1,11 @@
 import { useMemo } from "react";
 import { useQuery, useMutation, api } from "../lib/convex";
 import {
-  Card,
-  SectionTitle,
-  StatusBadge,
-  TrendBadge,
+  Kicker,
+  Mark,
+  Numeral,
+  Section,
+  Trend,
   Button,
   Favicon,
   fmtDate,
@@ -12,26 +13,20 @@ import {
   timeAgo,
   statusText,
 } from "../components/ui";
-import { RingMeter, BarChart } from "../components/charts";
 import { Link, useParams } from "react-router-dom";
 
-const KIND_META: Record<string, { icon: string; label: string; tint: string }> = {
-  signal: { icon: "🌐", label: "public discussion", tint: "text-zinc-400" },
-  email: { icon: "📧", label: "customer email", tint: "text-emerald-300" },
-  web: { icon: "🔍", label: "web evidence", tint: "text-[#f5a623]" },
-  historical: { icon: "🕘", label: "historical", tint: "text-violet-300" },
+const KIND_LABEL: Record<string, string> = {
+  signal: "public discussion",
+  email: "customer email",
+  web: "web evidence",
+  historical: "historical",
 };
-
-function Stat({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1.5 px-4 py-3.5">
-      <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-zinc-600">
-        {label}
-      </span>
-      {children}
-    </div>
-  );
-}
+const KIND_TONE: Record<string, string> = {
+  signal: "text-[#8fb7d9]",
+  email: "text-[#86d99a]",
+  web: "text-[#f0a428]",
+  historical: "text-[#c3b6e0]",
+};
 
 export default function IssueDetail() {
   const { issueId } = useParams();
@@ -41,9 +36,9 @@ export default function IssueDetail() {
   const daily = useMemo(() => {
     if (!detail) return null;
     const arr = new Array(14).fill(0);
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const today = startOfToday.getTime();
+    const sod = new Date();
+    sod.setHours(0, 0, 0, 0);
+    const today = sod.getTime();
     for (const s of detail.signals) {
       const idx = 13 - Math.round((today - new Date(s.occurredAt).setHours(0, 0, 0, 0)) / 86400000);
       if (idx >= 0 && idx < 14) arr[idx]++;
@@ -51,21 +46,19 @@ export default function IssueDetail() {
     return arr;
   }, [detail]);
 
-  if (detail === undefined)
-    return <div className="skeleton h-96 rounded-2xl" />;
+  if (detail === undefined) return <div className="skeleton h-96 w-full" />;
   if (detail === null)
     return (
-      <Card className="p-10 text-center text-sm text-zinc-500">
-        Issue not found.{" "}
-        <Link to="/issues" className="text-[#f5a623] hover:text-[#f5c164]">
-          Back to issues →
+      <Kicker>
+        issue not found ·{" "}
+        <Link to="/issues" className="text-[#f0a428]">
+          back to issues
         </Link>
-      </Card>
+      </Kicker>
     );
 
   const { issue, evidence, signals, investigations, reports } = detail;
   const running = investigations.find((i: any) => i.status === "running" || i.status === "pending");
-  const webEvidence = evidence.filter((e: any) => e.kind === "web");
   const dayLabels = Array.from({ length: 14 }, (_, i) => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -74,23 +67,26 @@ export default function IssueDetail() {
   });
 
   return (
-    <div className="space-y-5">
-      {/* header */}
-      <div className="flex items-start justify-between gap-5">
+    <div className="space-y-8">
+      {/* headline */}
+      <div className="flex items-start justify-between gap-6">
         <div className="min-w-0">
-          <Link to="/issues" className="text-[11px] text-zinc-500 transition hover:text-zinc-300">
-            ← issues
-          </Link>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2.5">
-            <h2 className={`text-[22px] font-semibold tracking-tight ${statusText(issue.status)}`}>
+          <Kicker>
+            <Link to="/issues" className="hover:text-[#ece5d5]">
+              ← issues
+            </Link>
+          </Kicker>
+          <div className="mt-2 flex flex-wrap items-baseline gap-x-4">
+            <h2
+              className={`text-[26px] font-medium tracking-tight ${statusText(issue.status)}`}
+              style={{ fontFamily: "var(--font-display)" }}
+            >
               {issue.title}
             </h2>
-            <StatusBadge status={issue.status} />
-            <span className="rounded-md border border-white/[0.08] px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-zinc-400">
-              {issue.severity}
-            </span>
+            <Mark status={issue.status} />
+            <Kicker>{issue.severity}</Kicker>
           </div>
-          <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-zinc-400">
+          <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-[#a89f8c]">
             {issue.description}
           </p>
         </div>
@@ -100,242 +96,193 @@ export default function IssueDetail() {
           disabled={!!running}
           className="shrink-0"
         >
-          {running ? (
-            <>
-              <span className="animate-pulse-dot">◍</span> Investigating…
-            </>
-          ) : (
-            <>🔍 Run investigation</>
-          )}
+          {running ? "⌕ investigating…" : "⌕ run investigation"}
         </Button>
       </div>
 
-      {/* stat strip */}
-      <Card className="grid grid-cols-2 divide-white/[0.05] sm:grid-cols-4 sm:divide-x">
-        <Stat label="Mentions">
-          <div className="flex items-baseline gap-2">
-            <span className="font-mono text-2xl font-semibold text-zinc-100">
-              {issue.mentionsThisWeek}
-            </span>
-            <span className="font-mono text-xs text-zinc-500">/ {issue.mentionsPrevWeek} prev wk</span>
+      {/* figures */}
+      <Section strong className="grid grid-cols-2 gap-y-6 md:grid-cols-4">
+        <div>
+          <Kicker>Mentions</Kicker>
+          <div className="mt-1 flex items-baseline gap-2">
+            <Numeral className="text-[36px]">{issue.mentionsThisWeek}</Numeral>
+            <span className="font-mono text-[11px] text-[#6f695c]">/ {issue.mentionsPrevWeek} wk</span>
           </div>
-          <TrendBadge growth={issue.growthMultiplier} />
-        </Stat>
-        <Stat label="Confidence">
-          <div className="flex items-center gap-3">
-            <RingMeter value={issue.confidence} size={44} label="%" />
-            <span className="text-[11px] leading-snug text-zinc-500">
-              {evidence.length} evidence items
-            </span>
+          <Trend growth={issue.growthMultiplier} className="mt-1 block" />
+        </div>
+        <div>
+          <Kicker>Confidence</Kicker>
+          <div className="mt-1 flex items-baseline gap-2">
+            <Numeral className="text-[36px]" tone={issue.confidence >= 70 ? "live" : "dim"}>
+              {issue.confidence}
+            </Numeral>
+            <span className="font-mono text-[11px] text-[#6f695c]">% · {evidence.length} items</span>
           </div>
-        </Stat>
-        <Stat label="Priority">
-          <div className="font-mono text-2xl font-semibold text-zinc-100">
-            {Math.round(issue.priorityScore)}
-            <span className="text-sm text-zinc-600">/100</span>
+        </div>
+        <div>
+          <Kicker>Priority</Kicker>
+          <div className="mt-1 flex items-baseline gap-2">
+            <Numeral className="text-[36px]" tone={issue.priorityScore >= 60 ? "signal" : "dim"}>
+              {Math.round(issue.priorityScore)}
+            </Numeral>
+            <span className="font-mono text-[11px] text-[#6f695c]">/ 100</span>
           </div>
-          <div className="flex h-1 w-24 overflow-hidden rounded-full bg-white/[0.06]">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-[#f5a623] to-[#e8892b] transition-all duration-700"
-              style={{ width: `${issue.priorityScore}%` }}
-            />
-          </div>
-        </Stat>
-        <Stat label="Affected">
-          <div className="text-[13px] font-medium text-zinc-200">
-            {issue.affectedSegment ?? "unknown"}
-          </div>
-          <span className="font-mono text-[10px] text-zinc-600">
-            first {fmtDate(issue.firstDetectedAt)} · last {fmtDate(issue.lastDetectedAt)}
+        </div>
+        <div>
+          <Kicker>Affected</Kicker>
+          <div className="mt-1.5 text-[13px] text-[#ece5d5]">{issue.affectedSegment ?? "unknown"}</div>
+          <div className="mt-0.5 font-mono text-[9.5px] text-[#6f695c]">
+            first {fmtDate(issue.firstDetectedAt)}
             {issue.resolvedAt ? ` · resolved ${fmtDate(issue.resolvedAt)}` : ""}
-          </span>
-        </Stat>
-      </Card>
+          </div>
+        </div>
+      </Section>
 
       {/* memory / reasoning / recommendation */}
       {(issue.historicalNote || issue.reasoningSummary || issue.recommendedAction) && (
-        <div className="grid gap-3 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-3">
           {issue.historicalNote && (
-            <Card className="border-violet-500/20 bg-violet-500/[0.05] p-4">
-              <div className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-violet-300">
-                <span>🧠</span> Historical context
-              </div>
-              <p className="mt-2.5 text-[12.5px] leading-relaxed text-violet-200/90">
-                {issue.historicalNote}
-              </p>
-            </Card>
+            <Section className="border-t border-[#c3b6e0]/30">
+              <Kicker className="text-[#c3b6e0]">❖ Historical context</Kicker>
+              <p className="mt-2 text-[12.5px] leading-relaxed text-[#cfc6b2]">{issue.historicalNote}</p>
+            </Section>
           )}
           {issue.reasoningSummary && (
-            <Card className="p-4">
-              <div className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-zinc-400">
-                <span>◍</span> Agent reasoning
-              </div>
-              <p className="mt-2.5 text-[12.5px] leading-relaxed text-zinc-300">
-                {issue.reasoningSummary}
-              </p>
-            </Card>
+            <Section>
+              <Kicker>Agent reasoning</Kicker>
+              <p className="mt-2 text-[12.5px] leading-relaxed text-[#a89f8c]">{issue.reasoningSummary}</p>
+            </Section>
           )}
           {issue.recommendedAction && (
-            <Card className="border-emerald-500/20 bg-emerald-500/[0.05] p-4">
-              <div className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
-                <span>➜</span> Recommended
-              </div>
-              <p className="mt-2.5 text-[12.5px] leading-relaxed text-emerald-200/90">
-                {issue.recommendedAction}
-              </p>
-            </Card>
+            <Section className="border-t border-[#86d99a]/30">
+              <Kicker className="text-[#86d99a]">➜ Recommended</Kicker>
+              <p className="mt-2 text-[12.5px] leading-relaxed text-[#cfc6b2]">{issue.recommendedAction}</p>
+            </Section>
           )}
         </div>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-5">
-        {/* evidence timeline */}
-        <div className="space-y-5 lg:col-span-3">
-          <div>
-            <SectionTitle
-              right={
-                <span className="font-mono text-[10px] text-zinc-600">
-                  {evidence.length} items · {webEvidence.length} web
-                </span>
-              }
-            >
-              Evidence timeline
-            </SectionTitle>
-            <Card className="relative p-0">
+      <div className="grid gap-10 lg:grid-cols-5">
+        {/* evidence ledger */}
+        <div className="space-y-8 lg:col-span-3">
+          <Section strong>
+            <div className="flex items-baseline justify-between">
+              <Kicker>Evidence — {evidence.length} items</Kicker>
+              <Kicker>
+                {evidence.filter((e: any) => e.kind === "web").length} from the live web
+              </Kicker>
+            </div>
+            <div className="mt-2">
               {evidence.length === 0 && (
-                <div className="px-6 py-10 text-center text-xs text-zinc-500">
-                  No evidence collected yet.
-                </div>
+                <Kicker className="py-6">no evidence collected yet</Kicker>
               )}
-              <div className="relative">
-                {evidence.length > 0 && (
-                  <div className="absolute bottom-5 left-[27px] top-5 w-px bg-gradient-to-b from-white/[0.14] via-white/[0.08] to-transparent" />
-                )}
-                {evidence.map((e: any) => {
-                  const meta = KIND_META[e.kind] ?? KIND_META.signal;
-                  return (
-                    <div key={e._id} className="animate-fade-up relative flex gap-3.5 px-4 py-3.5 transition hover:bg-white/[0.02]">
-                      <div className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/[0.09] bg-zinc-900 text-[11px]">
-                        {meta.icon}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px]">
-                          <span className={`font-medium ${meta.tint}`}>{meta.label}</span>
-                          {e.source !== e.kind && <span className="text-zinc-600">{e.source}</span>}
-                          <span className="text-zinc-700">·</span>
-                          <span className="font-mono text-zinc-600">{fmtDate(e.occurredAt)}</span>
-                          <span className="ml-auto inline-flex items-center gap-1 font-mono text-zinc-600">
-                            rel
-                            <span className="rounded bg-white/[0.05] px-1 py-px text-zinc-400">
-                              {e.relevance}
-                            </span>
-                          </span>
-                        </div>
-                        <blockquote className="mt-1.5 border-l-2 border-white/[0.09] pl-2.5 text-[12.5px] leading-relaxed text-zinc-300">
-                          {e.excerpt}
-                        </blockquote>
-                        {e.url && (
-                          <a
-                            href={e.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="mt-1 inline-flex max-w-full items-center gap-1.5 truncate font-mono text-[10.5px] text-[#f5a623]/80 transition hover:text-[#f5c164]"
-                          >
-                            <Favicon url={e.url} />
-                            <span className="truncate">{e.url}</span>
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-          </div>
+              {evidence.map((e: any) => (
+                <div key={e._id} className="ledger-row animate-fade-up border-b border-[#ece5d5]/8 py-3.5">
+                  <div className="flex flex-wrap items-baseline gap-x-2">
+                    <span className={`font-mono text-[9.5px] uppercase tracking-[0.14em] ${KIND_TONE[e.kind] ?? "text-[#8a8271]"}`}>
+                      {KIND_LABEL[e.kind] ?? e.kind}
+                    </span>
+                    <span className="font-mono text-[9.5px] text-[#4d483e]">{e.source}</span>
+                    <span className="font-mono text-[9.5px] text-[#6f695c]">{fmtDate(e.occurredAt)}</span>
+                    <span className="ml-auto font-mono text-[9.5px] text-[#6f695c]">rel {e.relevance}</span>
+                  </div>
+                  <blockquote className="mt-1.5 border-l border-[#ece5d5]/20 pl-3 text-[12.5px] leading-relaxed text-[#cfc6b2]">
+                    {e.excerpt}
+                  </blockquote>
+                  {e.url && (
+                    <a
+                      href={e.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1 inline-flex max-w-full items-center gap-1.5 truncate font-mono text-[10px] text-[#f0a428]/80 hover:text-[#f0a428]"
+                    >
+                      <Favicon url={e.url} />
+                      <span className="truncate">{e.url}</span>
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Section>
 
-          {/* raw signals */}
-          <div>
-            <SectionTitle right={<span className="font-mono text-[10px] text-zinc-600">{signals.length}</span>}>
-              Raw signals
-            </SectionTitle>
-            <Card className="max-h-72 divide-y divide-white/[0.05] overflow-y-auto">
+          <Section strong>
+            <Kicker>Raw signals — {signals.length}</Kicker>
+            <div className="mt-2 max-h-72 overflow-y-auto">
               {[...signals]
                 .sort((a: any, b: any) => b.occurredAt - a.occurredAt)
                 .map((s: any) => (
-                  <div key={s._id} className="group px-4 py-2.5">
-                    <div className="flex items-center justify-between text-[10px]">
-                      <span className="flex items-center gap-1.5 text-zinc-500">
-                        <span>{s.source === "email" ? "📧" : "🌐"}</span>
-                        {s.source}
-                        {s.author ? <span className="text-zinc-600">· {s.author}</span> : null}
+                  <div key={s._id} className="ledger-row border-b border-[#ece5d5]/8 py-2.5">
+                    <div className="flex items-center justify-between font-mono text-[9.5px] text-[#6f695c]">
+                      <span>
+                        {s.source === "email" ? "✉" : "◍"} {s.source}
+                        {s.author ? ` · ${s.author}` : ""}
                       </span>
-                      <span className="font-mono text-zinc-600">{fmtDate(s.occurredAt)}</span>
+                      <span>{fmtDate(s.occurredAt)}</span>
                     </div>
-                    <p className="mt-1 line-clamp-2 text-[11.5px] leading-relaxed text-zinc-400 transition group-hover:text-zinc-300">
+                    <p className="mt-1 line-clamp-2 text-[11.5px] leading-relaxed text-[#8a8271]">
                       {s.content}
                     </p>
                   </div>
                 ))}
-              {signals.length === 0 && (
-                <div className="px-4 py-6 text-center text-xs text-zinc-500">none</div>
-              )}
-            </Card>
-          </div>
+            </div>
+          </Section>
         </div>
 
         {/* right column */}
-        <div className="space-y-5 lg:col-span-2">
-          {/* mentions per day */}
-          <div>
-            <SectionTitle right={<span className="font-mono text-[10px] text-zinc-600">14 days</span>}>
-              Mentions / day
-            </SectionTitle>
-            <Card className="p-4">
-              <BarChart data={daily ?? []} labels={dayLabels} height={60} color="#34d399" />
-            </Card>
-          </div>
+        <div className="space-y-8 lg:col-span-2">
+          <Section strong>
+            <Kicker>Mentions / day — 14 days</Kicker>
+            <div className="mt-3 flex items-end gap-[3px]" style={{ height: 52 }}>
+              {(daily ?? []).map((v: number, i: number) => {
+                const max = Math.max(...(daily ?? [1]), 1);
+                return (
+                  <div
+                    key={i}
+                    className="flex-1"
+                    style={{
+                      height: `${Math.max((v / max) * 100, v > 0 ? 8 : 3)}%`,
+                      background: v > 0 ? "rgba(134,217,154,0.5)" : "rgba(236,229,213,0.08)",
+                    }}
+                    title={`${dayLabels[i]}: ${v}`}
+                  />
+                );
+              })}
+            </div>
+          </Section>
 
-          {/* investigations */}
-          <div>
-            <SectionTitle right={<span className="font-mono text-[10px] text-zinc-600">{investigations.length}</span>}>
-              Investigations
-            </SectionTitle>
-            <Card className="divide-y divide-white/[0.05]">
+          <Section strong>
+            <Kicker>Investigations — {investigations.length}</Kicker>
+            <div className="mt-2">
               {investigations.length === 0 && (
-                <div className="px-4 py-6 text-center text-xs text-zinc-500">
-                  None yet — trigger one above.
-                </div>
+                <Kicker className="py-4">none yet — trigger one above</Kicker>
               )}
               {investigations.map((inv: any) => (
-                <div key={inv._id} className={`animate-fade-up p-4 ${inv.status === "running" ? "running-sweep" : ""}`}>
-                  <div className="flex items-center justify-between gap-2">
-                    <StatusBadge status={inv.status === "pending" ? "running" : inv.status} />
-                    <span className="font-mono text-[9px] text-zinc-600">
+                <div
+                  key={inv._id}
+                  className={`animate-fade-up border-b border-[#ece5d5]/8 py-3.5 ${
+                    inv.status === "running" ? "running-sweep" : ""
+                  }`}
+                >
+                  <div className="flex items-baseline justify-between gap-2">
+                    <Mark status={inv.status === "pending" ? "running" : inv.status} />
+                    <span className="font-mono text-[9px] text-[#4d483e]">
                       {fmtDateTime(inv.startedAt)} · {inv.triggeredBy}
                     </span>
                   </div>
                   {inv.question && (
-                    <p className="mt-2 text-[12px] italic leading-snug text-zinc-300">“{inv.question}”</p>
+                    <p className="mt-1.5 text-[12px] italic text-[#cfc6b2]">“{inv.question}”</p>
                   )}
                   {inv.plan.length > 0 && (
-                    <div className="mt-2.5 space-y-1">
+                    <div className="mt-2 space-y-0.5">
                       {inv.plan.map((step: string, idx: number) => {
                         const done = inv.status === "complete" || idx < inv.stepIndex;
                         const current = idx === inv.stepIndex && inv.status === "running";
                         return (
-                          <div key={idx} className="flex items-center gap-2 text-[11px]">
-                            <span
-                              className={
-                                done
-                                  ? "text-emerald-400"
-                                  : current
-                                    ? "animate-pulse-dot text-[#f5a623]"
-                                    : "text-zinc-700"
-                              }
-                            >
+                          <div key={idx} className="flex items-center gap-2 font-mono text-[10px]">
+                            <span className={done ? "text-[#86d99a]" : current ? "text-[#f0a428] animate-pulse-dot" : "text-[#4d483e]"}>
                               {done ? "●" : "○"}
                             </span>
-                            <span className={done ? "text-zinc-400" : current ? "text-[#f5c164]" : "text-zinc-600"}>
+                            <span className={done ? "text-[#8a8271]" : current ? "text-[#f0a428]" : "text-[#4d483e]"}>
                               {step}
                             </span>
                           </div>
@@ -344,48 +291,40 @@ export default function IssueDetail() {
                     </div>
                   )}
                   {inv.findings && (
-                    <p className="mt-3 whitespace-pre-line rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-[11px] leading-relaxed text-zinc-400">
+                    <p className="mt-2 whitespace-pre-line border-l border-[#ece5d5]/15 pl-3 font-mono text-[10px] leading-relaxed text-[#8a8271]">
                       {inv.findings}
                     </p>
                   )}
                 </div>
               ))}
-            </Card>
-          </div>
+            </div>
+          </Section>
 
-          {/* reports */}
           {reports.length > 0 && (
-            <div>
-              <SectionTitle>Reports emailed</SectionTitle>
-              <Card className="divide-y divide-white/[0.05]">
+            <Section strong>
+              <Kicker>Reports emailed</Kicker>
+              <div className="mt-2">
                 {reports.map((r: any) => (
-                  <div key={r._id} className="animate-fade-up p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="text-[12.5px] font-medium leading-snug text-zinc-200">
-                        {r.subject}
-                      </span>
-                      <span className="shrink-0 font-mono text-[9px] text-zinc-600">
-                        {timeAgo(r.sentAt)} ago
-                      </span>
+                  <div key={r._id} className="animate-fade-up border-b border-[#ece5d5]/8 py-3.5">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-[12.5px] leading-snug text-[#cfc6b2]">{r.subject}</span>
+                      <span className="shrink-0 font-mono text-[9px] text-[#4d483e]">{timeAgo(r.sentAt)} ago</span>
                     </div>
-                    <div className="mt-1 flex items-center gap-2 font-mono text-[10px] text-zinc-500">
-                      <span>→ {r.sentTo}</span>
-                      <span className="rounded bg-white/[0.05] px-1.5 py-px uppercase tracking-wider text-zinc-400">
-                        {r.kind}
-                      </span>
+                    <div className="mt-0.5 font-mono text-[9.5px] text-[#6f695c]">
+                      → {r.sentTo} · {r.kind}
                     </div>
-                    <details className="group mt-2">
-                      <summary className="cursor-pointer text-[11px] text-zinc-500 transition hover:text-zinc-300">
+                    <details className="mt-1.5">
+                      <summary className="cursor-pointer font-mono text-[10px] text-[#6f695c] hover:text-[#ece5d5]">
                         show report
                       </summary>
-                      <pre className="mt-2 max-h-72 overflow-y-auto whitespace-pre-wrap rounded-xl border border-white/[0.06] bg-black/30 p-3 font-mono text-[10.5px] leading-relaxed text-zinc-400">
+                      <pre className="mt-1.5 max-h-72 overflow-y-auto whitespace-pre-wrap border-l border-[#ece5d5]/15 pl-3 font-mono text-[10px] leading-relaxed text-[#8a8271]">
                         {r.bodyText}
                       </pre>
                     </details>
                   </div>
                 ))}
-              </Card>
-            </div>
+              </div>
+            </Section>
           )}
         </div>
       </div>

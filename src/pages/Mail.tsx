@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery, api } from "../lib/convex";
 import {
-  Card,
-  SectionTitle,
+  Kicker,
+  Section,
   SkeletonBlock,
   EmptyState,
   timeAgo,
@@ -177,7 +177,7 @@ export default function Mail() {
       <div className="grid gap-5 lg:grid-cols-2">
         {/* inbound */}
         <div>
-          <SectionTitle
+          <KickerHead
             right={
               <span className="font-mono text-[10px] text-zinc-600">
                 {filtered.length}
@@ -186,29 +186,29 @@ export default function Mail() {
             }
           >
             Inbound · realtime
-          </SectionTitle>
-          <Card className="divide-y divide-white/[0.05]">
+          </KickerHead>
+          <div>
             {filtered.length === 0 ? (
               <EmptyState
-                icon="📬"
+                glyph="✉"
                 title="No mail for this product"
                 hint="Run the scenario's email step, or pick another filter. New mail is tagged with the active product automatically."
               />
             ) : (
               filtered.map((m) => <MessageRow key={m.messageId} m={m} />)
             )}
-          </Card>
+          </div>
         </div>
 
         {/* reports */}
         <div>
-          <SectionTitle right={<span className="font-mono text-[10px] text-zinc-600">{filteredReports.length} sent</span>}>
+          <KickerHead right={<span className="font-mono text-[10px] text-zinc-600">{filteredReports.length} sent</span>}>
             Internal reports sent
-          </SectionTitle>
-          <Card className="divide-y divide-white/[0.05]">
+          </KickerHead>
+          <div>
             {filteredReports.length === 0 ? (
               <EmptyState
-                icon="✉️"
+                glyph="✉"
                 title="No reports for this product"
                 hint="When an issue crosses the alert threshold, the agent emails the team by itself."
               />
@@ -237,9 +237,18 @@ export default function Mail() {
                 </div>
               ))
             )}
-          </Card>
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function KickerHead({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
+  return (
+    <div className="mb-3 flex items-baseline justify-between">
+      <div className="kicker">{children}</div>
+      {right}
     </div>
   );
 }

@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4.1, gpt-4o-mini
 - **Started:** 2026-08-29T19:00:00Z
-- **Last updated:** 2026-08-30T22:40:00Z
+- **Last updated:** 2026-08-31T21:59:43Z
 
 ## Log
 
@@ -102,3 +102,13 @@ search pacing and rate-limit retry so free-tier caps stop silently emptying resu
 (`convex/research.ts`, `convex/chat.ts`, `convex/demo.ts`, `convex/lib/firecrawl.ts`,
 `convex/lib/analysis.ts`). Convex features: actions, internal queries, mutations,
 scheduled functions.
+
+### 2026-08-31 - working tree
+Redesigned the product surface as an editorial daily brief: newspaper masthead with a
+live clock, numbered section rail, hairline-ruled ledger rows instead of cards,
+typographic status marks, and Fraunces display numerals for the headline figures
+(`src/index.css`, `src/components/ui.tsx`, `src/App.tsx`, all of `src/pages/`). Landing
+page rebuilt as a front page with an SVG radar brand mark; dashboard, issue detail,
+mail, chat and demo panels all moved onto the new primitives. Verified on the live
+deployment after two rounds of screenshot critique (fixed a doubled baseline under the
+signal-volume chart, flat-trend label rendering, and low-contrast microcopy).

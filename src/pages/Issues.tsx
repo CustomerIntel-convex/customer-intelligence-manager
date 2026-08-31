@@ -1,8 +1,9 @@
 import { useQuery, api } from "../lib/convex";
 import {
-  Card,
-  StatusBadge,
-  TrendBadge,
+  Kicker,
+  Mark,
+  Numeral,
+  Trend,
   SkeletonBlock,
   EmptyState,
   fmtDate,
@@ -11,11 +12,11 @@ import {
 import { Sparkline } from "../components/charts";
 import { Link } from "react-router-dom";
 
-const SEVERITY_BAR: Record<string, string> = {
-  critical: "bg-red-400",
-  high: "bg-orange-400",
-  medium: "bg-amber-400",
-  low: "bg-sky-400",
+const SEVERITY_MARK: Record<string, string> = {
+  critical: "bg-[#e5484d]",
+  high: "bg-[#f0a428]",
+  medium: "bg-[#c3b6e0]",
+  low: "bg-[#8fb7d9]",
 };
 
 export default function Issues() {
@@ -23,9 +24,9 @@ export default function Issues() {
 
   if (rows === undefined)
     return (
-      <div className="space-y-3">
-        {[...Array(4)].map((_, i) => (
-          <SkeletonBlock key={i} className="h-28" />
+      <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <SkeletonBlock key={i} className="h-16" />
         ))}
       </div>
     );
@@ -33,101 +34,95 @@ export default function Issues() {
   const active = rows.filter((r: any) => r.issue.status !== "resolved");
   const resolved = rows.filter((r: any) => r.issue.status === "resolved");
 
-  const IssueRow = ({ row }: { row: any }) => {
+  const Row = ({ row }: { row: any }) => {
     const i = row.issue;
-    const sparkColor = (i.growthMultiplier ?? 1) > 1 ? "#f87171" : "#34d399";
     return (
-      <Link to={`/issues/${i._id}`}>
-        <Card hover className="group relative overflow-hidden p-4">
-          <div
-            className={`absolute left-0 top-0 h-full w-[3px] ${SEVERITY_BAR[i.severity] ?? "bg-zinc-500"} opacity-70`}
-          />
-          <div className="flex items-start gap-4 pl-2">
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={`text-[15px] font-semibold tracking-tight ${statusText(i.status)}`}>
-                  {i.title}
-                </span>
-                <StatusBadge status={i.status} />
-              </div>
-              <p className="mt-1.5 line-clamp-2 max-w-2xl text-[12.5px] leading-relaxed text-zinc-400">
-                {i.description}
-              </p>
-              <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[10.5px] text-zinc-500">
-                <span>
-                  <span className="text-zinc-200">{i.mentionsThisWeek}</span>/wk now ·{" "}
-                  {i.mentionsPrevWeek} prev
-                </span>
-                {i.affectedSegment && (
-                  <span className="font-sans">
-                    affected: <span className="text-zinc-300">{i.affectedSegment}</span>
-                  </span>
-                )}
-                <span className="font-sans">first seen {fmtDate(i.firstDetectedAt)}</span>
-              </div>
-              {i.historicalNote && (
-                <div className="mt-3 inline-flex max-w-full items-center gap-1.5 rounded-lg border border-violet-500/20 bg-violet-500/[0.07] px-2.5 py-1.5 text-[11px] leading-snug text-violet-300">
-                  <span>🧠</span>
-                  <span className="truncate">{i.historicalNote}</span>
-                </div>
-              )}
-            </div>
-            <div className="flex shrink-0 flex-col items-end gap-2.5">
-              <Sparkline data={row.spark} width={110} height={34} stroke={sparkColor} className="w-[110px]" />
-              <div className="flex items-center gap-2">
-                <TrendBadge growth={i.growthMultiplier} />
-                <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-2 py-1 text-center">
-                  <div className="font-mono text-[13px] font-semibold leading-none text-zinc-100">
-                    {Math.round(i.priorityScore)}
-                  </div>
-                  <div className="mt-0.5 text-[8px] uppercase tracking-wider text-zinc-600">prio</div>
-                </div>
-                <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-2 py-1 text-center">
-                  <div className="font-mono text-[13px] font-semibold leading-none text-zinc-100">
-                    {i.confidence}%
-                  </div>
-                  <div className="mt-0.5 text-[8px] uppercase tracking-wider text-zinc-600">conf</div>
-                </div>
-              </div>
-            </div>
+      <Link
+        to={`/issues/${i._id}`}
+        className="ledger-row group flex items-center gap-6 border-b border-[#ece5d5]/8 py-4"
+      >
+        <span className={`h-8 w-[3px] shrink-0 ${SEVERITY_MARK[i.severity] ?? "bg-[#6f695c]"}`} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline gap-x-3">
+            <span
+              className={`text-[16px] tracking-tight ${statusText(i.status)}`}
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              {i.title}
+            </span>
+            <Mark status={i.status} />
           </div>
-        </Card>
+          <p className="mt-1 line-clamp-1 max-w-2xl text-[12px] leading-relaxed text-[#8a8271]">
+            {i.description}
+          </p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-4 font-mono text-[10px] text-[#6f695c]">
+            <span>
+              <span className="text-[#cfc6b2]">{i.mentionsThisWeek}</span>/wk · {i.mentionsPrevWeek} prev
+            </span>
+            {i.affectedSegment && <span>{i.affectedSegment}</span>}
+            <span>first {fmtDate(i.firstDetectedAt)}</span>
+          </div>
+          {i.historicalNote && (
+            <p className="mt-1.5 font-mono text-[10px] text-[#c3b6e0]/80">❖ {i.historicalNote}</p>
+          )}
+        </div>
+        <Sparkline
+          data={row.spark}
+          width={110}
+          height={30}
+          stroke={(i.growthMultiplier ?? 1) > 1 ? "#e5484d" : "#86d99a"}
+          className="hidden w-[110px] shrink-0 opacity-80 sm:block"
+        />
+        <div className="hidden w-16 shrink-0 text-right md:block">
+          <Trend growth={i.growthMultiplier} />
+        </div>
+        <div className="w-14 shrink-0 text-right">
+          <Numeral className="text-[22px]" tone={i.priorityScore >= 60 ? "signal" : "dim"}>
+            {Math.round(i.priorityScore)}
+          </Numeral>
+          <div className="font-mono text-[8px] uppercase tracking-[0.18em] text-[#4d483e]">prio</div>
+        </div>
+        <div className="w-14 shrink-0 text-right">
+          <Numeral className="text-[22px]" tone={i.confidence >= 70 ? "live" : "dim"}>
+            {i.confidence}
+          </Numeral>
+          <div className="font-mono text-[8px] uppercase tracking-[0.18em] text-[#4d483e]">conf</div>
+        </div>
       </Link>
     );
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-10">
       {rows.length === 0 && (
-        <Card>
-          <EmptyState
-            icon="◉"
-            title="No issues yet"
-            hint="When customer signals cluster, the agent opens a normalized issue with evidence and a priority score."
-          />
-        </Card>
+        <EmptyState
+          glyph="◎"
+          title="No issues yet"
+          hint="When customer signals cluster, the agent opens a normalized issue with evidence and a priority score."
+        />
       )}
 
       {active.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-            Active · {active.length}
-          </h3>
+        <section>
+          <div className="flex items-baseline justify-between border-b border-[#ece5d5]/25 pb-2">
+            <Kicker>Active — {active.length}</Kicker>
+            <Kicker>priority · confidence</Kicker>
+          </div>
           {active.map((row: any) => (
-            <IssueRow key={row.issue._id} row={row} />
+            <Row key={row.issue._id} row={row} />
           ))}
-        </div>
+        </section>
       )}
 
       {resolved.length > 0 && (
-        <div className="space-y-3 opacity-60 transition hover:opacity-100">
-          <h3 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-            Resolved · {resolved.length} · the agent's memory
-          </h3>
+        <section className="opacity-55 transition-opacity hover:opacity-100">
+          <div className="flex items-baseline justify-between border-b border-[#ece5d5]/15 pb-2">
+            <Kicker>Resolved — {resolved.length} · the agent's memory</Kicker>
+          </div>
           {resolved.map((row: any) => (
-            <IssueRow key={row.issue._id} row={row} />
+            <Row key={row.issue._id} row={row} />
           ))}
-        </div>
+        </section>
       )}
     </div>
   );

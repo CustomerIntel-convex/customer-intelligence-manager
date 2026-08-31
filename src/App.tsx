@@ -3,7 +3,7 @@ import { ConvexProvider, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { BrowserRouter, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { convex, api } from "./lib/convex";
-import { LiveDot, timeAgo } from "./components/ui";
+import { Kicker, LiveDot, timeAgo, todayLine } from "./components/ui";
 import Landing from "./pages/Landing";
 import Overview from "./pages/Overview";
 import Issues from "./pages/Issues";
@@ -12,175 +12,185 @@ import Mail from "./pages/Mail";
 import Chat from "./pages/Chat";
 import DemoPanel from "./pages/DemoPanel";
 
-const NAV = [
-  { to: "/", label: "Overview", icon: "◈", end: true },
-  { to: "/issues", label: "Issues", icon: "◉", badge: "issues" },
-  { to: "/mail", label: "Mail", icon: "✉" },
-  { to: "/chat", label: "Chat", icon: "◍" },
-  { to: "/demo", label: "Demo", icon: "▶" },
+const RAIL = [
+  { to: "/", n: "01", label: "Brief", end: true },
+  { to: "/issues", n: "02", label: "Issues", badge: "issues" },
+  { to: "/mail", n: "03", label: "Mail" },
+  { to: "/chat", n: "04", label: "Ask" },
+  { to: "/demo", n: "05", label: "Demo" },
 ];
 
-const PAGE_TITLES: Record<string, [string, string]> = {
-  "/": ["Overview", "what changed across the customer's voice"],
-  "/issues": ["Issues", "normalized customer problems, ranked by priority"],
-  "/mail": ["Agent inbox", "real email — routed, investigated, answered"],
-  "/chat": ["Ask the agent", "answers from live state"],
-  "/demo": ["Demo scenario", "deterministic walkthrough · every step is real"],
+const TITLES: Record<string, string> = {
+  "/": "The Morning Brief",
+  "/issues": "Issues — the ledger of customer problems",
+  "/mail": "The inbox — routed, investigated, answered",
+  "/chat": "Ask the agent",
+  "/demo": "Demo scenarios",
 };
 
-function Header() {
+/** Masthead — the newspaper nameplate. */
+function Masthead() {
   const location = useLocation();
   const [clock, setClock] = useState(() => new Date());
   useEffect(() => {
     const t = setInterval(() => setClock(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
-  const [title, subtitle] =
-    PAGE_TITLES[location.pathname] ??
-    (location.pathname.startsWith("/issues")
-      ? ["Issue", "evidence, timeline and investigation"]
-      : ["Customer Intelligence", ""]);
+  const title =
+    TITLES[location.pathname] ??
+    (location.pathname.startsWith("/issues") ? "Issue" : "Customer Intelligence");
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-white/[0.06] bg-zinc-950/70 px-8 backdrop-blur-xl">
-      <div className="flex items-baseline gap-3">
-        <h1 className="text-[16px] font-medium tracking-tight text-[#efe9dc]" style={{ fontFamily: "var(--font-display)" }}>{title}</h1>
-        <span className="hidden text-xs text-zinc-500 md:inline">{subtitle}</span>
-      </div>
-      <div className="flex items-center gap-3">
-        <span className="hidden items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[10px] uppercase tracking-wider text-zinc-500 sm:inline-flex">
-          convex · firecrawl · openai · agentmail
-        </span>
-        <span className="font-mono text-xs tabular-nums text-zinc-500">
-          {clock.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" })}
-        </span>
+    <header className="shrink-0 border-b border-[#ece5d5]/25 px-10 pb-3 pt-4">
+      <div className="flex items-baseline justify-between">
+        <div className="flex items-baseline gap-4">
+          <span
+            className="text-[19px] font-medium tracking-tight text-[#ece5d5]"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            {title}
+          </span>
+          <Kicker className="hidden md:block">{todayLine()}</Kicker>
+        </div>
+        <div className="flex items-center gap-5">
+          <span className="hidden items-center gap-2 lg:flex">
+            <Kicker>convex / openai / firecrawl / agentmail</Kicker>
+          </span>
+          <span className="flex items-center gap-2">
+            <LiveDot />
+            <Kicker className="text-[#86d99a]">on duty</Kicker>
+          </span>
+          <span className="font-mono text-[11px] tabular-nums text-[#8a8271]">
+            {clock.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" })}
+          </span>
+        </div>
       </div>
     </header>
   );
 }
 
-function Sidebar() {
+/** Numbered left rail. */
+function Rail() {
   const company = useQuery(api.queries.getCompany, {});
   const badges = useQuery(api.queries.getNavBadges, {});
   const activity = useQuery(api.queries.listActivity, {});
   const user = useQuery(api.auth.currentUser, {});
-  const lastActivity = activity?.[0];
+  const last = activity?.[0];
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r border-white/[0.06]">
-      {/* brand */}
-      <div className="flex items-center gap-3 px-5 pb-6 pt-6">
-        <div className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-[#f5a623]/30 bg-[#f5a623]/10 text-base shadow-[0_0_20px_rgba(245,166,35,0.15)]">
-          🛰️
+    <aside className="flex w-[188px] shrink-0 flex-col border-r border-[#ece5d5]/12 px-5 pb-5 pt-7">
+      {/* wordmark */}
+      <div className="px-1">
+        <div className="font-mono text-[9.5px] uppercase tracking-[0.24em] text-[#8a8271]">
+          Customer
+          <br />
+          Intelligence
         </div>
-        <div>
-          <div className="text-[13px] font-semibold leading-tight tracking-tight">
-            Customer Intelligence
-          </div>
-          <div className="mt-0.5 flex items-center gap-1.5 text-[10px] font-medium text-emerald-400">
-            <LiveDot /> on duty
-          </div>
-        </div>
+        <div className="mt-2 h-px w-8 bg-[#f0a428]/70" />
       </div>
 
       {/* nav */}
-      <nav className="space-y-0.5 px-3">
-        {NAV.map((n) => (
+      <nav className="mt-8 space-y-1">
+        {RAIL.map((r) => (
           <NavLink
-            key={n.to}
-            to={n.to}
-            end={n.end as any}
+            key={r.to}
+            to={r.to}
+            end={r.end as any}
             className={({ isActive }) =>
-              `group flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] transition-all ${
+              `group flex items-baseline gap-3 rounded-none py-1.5 pl-1 pr-2 transition-colors ${
                 isActive
-                  ? "bg-white/[0.07] font-medium text-zinc-100 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]"
-                  : "text-zinc-500 hover:bg-white/[0.03] hover:text-zinc-300"
+                  ? "text-[#ece5d5]"
+                  : "text-[#6f695c] hover:text-[#c3bAA8]"
               }`
             }
           >
-            <span className="w-4 text-center text-xs opacity-60">{n.icon}</span>
-            <span className="flex-1">{n.label}</span>
-            {n.badge === "issues" && badges && badges.critical + badges.emerging > 0 && (
-              <span className="flex items-center gap-1">
-                {badges.critical > 0 && (
-                  <span className="rounded-full bg-red-500/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-red-300">
-                    {badges.critical}
+            {({ isActive }) => (
+              <>
+                <span
+                  className={`font-mono text-[10px] tabular-nums ${
+                    isActive ? "text-[#f0a428]" : "text-[#4d483e]"
+                  }`}
+                >
+                  {r.n}
+                </span>
+                <span
+                  className={`text-[13px] ${isActive ? "font-medium" : ""}`}
+                  style={{ fontFamily: isActive ? "var(--font-display)" : undefined }}
+                >
+                  {r.label}
+                </span>
+                {r.badge === "issues" && badges && badges.critical + badges.emerging > 0 && (
+                  <span className="ml-auto font-mono text-[10px] tabular-nums text-[#f0a428]">
+                    {badges.critical + badges.emerging}
                   </span>
                 )}
-                {badges.emerging > 0 && (
-                  <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-amber-300">
-                    {badges.emerging}
-                  </span>
-                )}
-              </span>
+              </>
             )}
           </NavLink>
         ))}
       </nav>
 
-      {/* agent card */}
-      <div className="mt-auto space-y-3 p-4">
-        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-3.5">
-          <div className="text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-600">
-            Agent
+      {/* colophon */}
+      <div className="mt-auto space-y-3">
+        <div className="ruled pt-3">
+          <Kicker>Watching</Kicker>
+          <div
+            className="mt-1.5 truncate text-[13px] text-[#ece5d5]"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            {company?.name ?? "—"}
           </div>
-          <div className="mt-2 flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-lg border border-[#f5a623]/25 bg-[#f5a623]/10 text-[10px]">
-              🛰️
-            </span>
-            <div className="min-w-0">
-              <div className="truncate text-xs font-medium text-zinc-200">
-                {company?.name ?? "—"}
-              </div>
-              <div className="truncate font-mono text-[10px] text-zinc-500">
-                {company?.agentInbox ?? "not provisioned"}
-              </div>
-            </div>
+          <div className="mt-0.5 truncate font-mono text-[9.5px] text-[#6f695c]">
+            {company?.agentInbox ?? "not provisioned"}
           </div>
-          <div className="mt-3 flex items-center justify-between border-t border-white/[0.06] pt-2.5 text-[10px] text-zinc-500">
-            <span>last action</span>
-            <span className="font-mono text-zinc-400">
-              {lastActivity ? timeAgo(lastActivity.startedAt) + " ago" : "—"}
+        </div>
+        <div className="ruled pt-2.5">
+          <div className="flex items-center justify-between">
+            <Kicker>Last action</Kicker>
+            <span className="font-mono text-[9.5px] text-[#8a8271]">
+              {last ? `${timeAgo(last.startedAt)} ago` : "—"}
             </span>
           </div>
           {user && (
-            <div className="mt-2 flex items-center justify-between border-t border-white/[0.06] pt-2.5">
-              <span className="truncate font-mono text-[10px] text-zinc-500">{user.email}</span>
-              <button
-                onClick={() => {
-                  // end the Convex Auth session and unlock-free the workspace
-                  Object.keys(localStorage)
-                    .filter((k) => k.includes("convexAuth"))
-                    .forEach((k) => localStorage.removeItem(k));
-                  window.location.reload();
-                }}
-                className="shrink-0 rounded-md border border-white/[0.08] px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-zinc-500 transition hover:text-zinc-300"
-              >
-                sign out
-              </button>
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <span className="truncate font-mono text-[9.5px] text-[#6f695c]">{user.email}</span>
+              <SignOut />
             </div>
           )}
         </div>
-        <p className="px-1 text-[9px] leading-relaxed tracking-wide text-zinc-600">
-          observes · investigates · remembers · reports
+        <p className="font-mono text-[8.5px] uppercase tracking-[0.18em] leading-relaxed text-[#6f695c]">
+          observes · investigates
+          <br />
+          remembers · reports
         </p>
       </div>
     </aside>
   );
 }
 
-/** One-click demo sign-in — judges get the full product with zero friction. */
-const JWT_KEY =
-  "__convexAuthJWT_" +
-  (import.meta as any).env.VITE_CONVEX_URL.replace(/[^a-z0-9]/gi, "");
+function SignOut() {
+  return (
+    <button
+      onClick={() => {
+        Object.keys(localStorage)
+          .filter((k) => k.includes("convexAuth"))
+          .forEach((k) => localStorage.removeItem(k));
+        window.location.reload();
+      }}
+      className="shrink-0 font-mono text-[8.5px] uppercase tracking-[0.16em] text-[#6f695c] transition-colors hover:text-[#ece5d5]"
+    >
+      exit
+    </button>
+  );
+}
 
 function Shell() {
   return (
-    <div className="flex h-full">
-      <Sidebar />
-      <main className="min-w-0 flex-1 overflow-y-auto">
-        <Header />
-        <div className="mx-auto max-w-6xl px-8 py-7">
+    <div className="flex h-full flex-col">
+      <Masthead />
+      <div className="flex min-h-0 flex-1">
+        <Rail />
+        <main className="min-w-0 flex-1 overflow-y-auto px-10 py-7">
           <Routes>
             <Route path="/" element={<Overview />} />
             <Route path="/issues" element={<Issues />} />
@@ -189,19 +199,17 @@ function Shell() {
             <Route path="/chat" element={<Chat />} />
             <Route path="/demo" element={<DemoPanel />} />
           </Routes>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
 
-function AuthGate() {
-  // Convex Auth mints + server-verifies real session tokens; the workspace
-  // unlocks when a valid session exists (signIn triggers a refresh below).
-  const [session, setSession] = useState<boolean>(() =>
-    !!localStorage.getItem(JWT_KEY)
-  );
+const JWT_KEY =
+  "__convexAuthJWT_" + (import.meta as any).env.VITE_CONVEX_URL.replace(/[^a-z0-9]/gi, "");
 
+function AuthGate() {
+  const [session, setSession] = useState<boolean>(() => !!localStorage.getItem(JWT_KEY));
   useEffect(() => {
     const check = () => setSession(!!localStorage.getItem(JWT_KEY));
     const t = setInterval(check, 500);
@@ -211,7 +219,6 @@ function AuthGate() {
       window.removeEventListener("storage", check);
     };
   }, []);
-
   if (!session) return <Landing />;
   return (
     <BrowserRouter>

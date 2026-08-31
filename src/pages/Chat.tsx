@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAction, useQuery } from "convex/react";
 import { api } from "../lib/convex";
-import { Card, Button } from "../components/ui";
+import { Button } from "../components/ui";
 
 const SUGGESTIONS = [
   "What are people complaining about Firecrawl today?",
@@ -36,12 +36,12 @@ export default function Chat() {
 
   return (
     <div className="flex h-[calc(100vh-7.5rem)] flex-col">
-      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col border border-[#ece5d5]/12">
         {/* messages */}
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6">
           {(!messages || messages.length === 0) && (
             <div className="flex h-full flex-col items-center justify-center text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/80 to-violet-600/80 text-xl shadow-[0_0_30px_rgba(99,102,241,0.3)]">
+              <div className="flex h-12 w-12 items-center justify-center border border-[#f0a428]/30 bg-[#f0a428]/10">
                 🛰️
               </div>
               <p className="mt-4 text-sm font-medium text-zinc-300">
@@ -130,7 +130,7 @@ export default function Chat() {
             </Button>
           </form>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
