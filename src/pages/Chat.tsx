@@ -66,7 +66,7 @@ export default function Chat() {
               <div
                 className={`max-w-[78%] whitespace-pre-line rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed ${
                   m.role === "user"
-                    ? "rounded-br-md bg-indigo-500/90 text-white shadow-[0_0_20px_rgba(99,102,241,0.2)]"
+                    ? "rounded-br-md bg-[#f5a623]/90 text-[#1a1408] shadow-[0_0_20px_rgba(245,166,35,0.25)]"
                     : "rounded-bl-md border border-white/[0.07] bg-white/[0.04] text-zinc-200"
                 }`}
               >
@@ -106,7 +106,7 @@ export default function Chat() {
                 key={s}
                 onClick={() => submit(s)}
                 disabled={busy}
-                className="rounded-full border border-white/[0.08] bg-white/[0.02] px-3 py-1 text-[11px] text-zinc-400 transition-all hover:border-indigo-400/40 hover:bg-indigo-500/10 hover:text-indigo-200 disabled:opacity-40"
+                className="rounded-full border border-white/[0.08] bg-white/[0.02] px-3 py-1 text-[11px] text-zinc-400 transition-all hover:border-[#f5a623]/40 hover:bg-[#f5a623]/10 hover:text-[#f5c164] disabled:opacity-40"
               >
                 {s}
               </button>
@@ -123,7 +123,7 @@ export default function Chat() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about customer signals, issues, trends…"
-              className="flex-1 rounded-xl border border-white/[0.09] bg-black/30 px-4 py-2.5 text-[13px] text-zinc-100 placeholder-zinc-600 outline-none transition focus:border-indigo-400/50 focus:bg-black/50"
+              className="flex-1 rounded-xl border border-white/[0.09] bg-black/30 px-4 py-2.5 text-[13px] text-zinc-100 placeholder-zinc-600 outline-none transition focus:border-[#f5a623]/50 focus:bg-black/50"
             />
             <Button type="submit" variant="primary" disabled={busy || !input.trim()}>
               Send

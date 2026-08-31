@@ -18,7 +18,7 @@ const path = (data: number[], w: number, h: number, pad = 2): string => {
 export function Sparkline({
   data,
   className = "",
-  stroke = "#818cf8",
+  stroke = "#f5a623",
   width = 120,
   height = 32,
 }: {
@@ -77,7 +77,7 @@ export function Sparkline({
 export function BarChart({
   data,
   className = "",
-  color = "#818cf8",
+  color = "#f5a623",
   height = 72,
   labels,
 }: {

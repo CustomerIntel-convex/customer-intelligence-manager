@@ -15,7 +15,7 @@ const ROUTING_META: Record<string, { label: string; cls: string }> = {
   },
   employee_question: {
     label: "employee question → investigated + replied",
-    cls: "border-indigo-500/25 bg-indigo-500/10 text-indigo-300",
+    cls: "border-[#f5a623]/30 bg-[#f5a623]/10 text-[#f5a623]",
   },
   other: { label: "noted", cls: "border-white/10 bg-white/[0.04] text-zinc-500" },
   pending: { label: "processing…", cls: "border-white/10 bg-white/[0.04] text-zinc-400" },
@@ -162,7 +162,7 @@ export default function Mail() {
               onClick={() => setFilter(t)}
               className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11.5px] transition-all ${
                 isSel
-                  ? "border-indigo-400/50 bg-indigo-500/15 text-indigo-200"
+                  ? "border-[#f5a623]/50 bg-[#f5a623]/12 text-[#f5c164]"
                   : "border-white/[0.08] bg-white/[0.02] text-zinc-400 hover:border-white/20 hover:text-zinc-200"
               }`}
             >

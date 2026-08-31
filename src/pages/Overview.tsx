@@ -215,7 +215,7 @@ export default function Overview() {
                     <div className="flex items-start justify-between gap-2">
                       <span
                         className={`text-[12.5px] leading-snug ${
-                          t.status === "running" ? "text-indigo-200" : "text-zinc-300"
+                          t.status === "running" ? "text-[#f5c164]" : "text-zinc-300"
                         }`}
                       >
                         {t.label}

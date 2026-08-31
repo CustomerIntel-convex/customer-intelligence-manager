@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4.1, gpt-4o-mini
 - **Started:** 2026-08-29T19:00:00Z
-- **Last updated:** 2026-08-30T13:00:00Z
+- **Last updated:** 2026-08-30T22:40:00Z
 
 ## Log
 
@@ -76,6 +76,13 @@ complaints) makes the agent decide to kick off a live research burst itself, ans
 live state with evidence citations (`convex/research.ts`, `convex/chat.ts`,
 `convex/lib/analysis.ts`). Convex features: actions, mutations, scheduled functions,
 queries.
+
+### 2026-08-30 - working tree
+Redesigned the product surface: a landing page (serif display type, radar-sweep satellite
+mark, the agent loop as a typographic strip) that flows into the authenticated workspace,
+and a cohesive dashboard restyle — warm ink/paper palette with amber signal accents,
+editorial headings, grain-field atmosphere (`src/pages/Landing.tsx`, `src/index.css`,
+`src/components/ui.tsx`, all pages). Convex features: realtime queries, auth.
 
 ### 2026-08-30 - working tree
 Added Convex Auth (password provider) with a one-click demo sign-in so judges get the full

@@ -213,7 +213,7 @@ export function Button({
       className={clsx(
         "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40",
         variant === "primary" &&
-          "bg-indigo-500/90 text-white shadow-[0_0_20px_rgba(99,102,241,0.25)] hover:bg-indigo-400",
+          "bg-[#f5a623]/90 text-[#1a1408] shadow-[0_0_24px_rgba(245,166,35,0.28)] hover:bg-[#f5a623]",
         variant === "default" &&
           "border border-white/10 bg-white/[0.04] text-zinc-200 hover:border-white/20 hover:bg-white/[0.08]",
         variant === "ghost" && "text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-200",
@@ -256,4 +256,13 @@ export function fmtClock(ts: number): string {
     minute: "2-digit",
     second: "2-digit",
   });
+}
+
+/** Serif display heading (landing/section moments). */
+export function Display({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <span className={className} style={{ fontFamily: "var(--font-display)" }}>
+      {children}
+    </span>
+  );
 }

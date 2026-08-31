@@ -18,7 +18,7 @@ import { Link, useParams } from "react-router-dom";
 const KIND_META: Record<string, { icon: string; label: string; tint: string }> = {
   signal: { icon: "🌐", label: "public discussion", tint: "text-zinc-400" },
   email: { icon: "📧", label: "customer email", tint: "text-emerald-300" },
-  web: { icon: "🔍", label: "web evidence", tint: "text-indigo-300" },
+  web: { icon: "🔍", label: "web evidence", tint: "text-[#f5a623]" },
   historical: { icon: "🕘", label: "historical", tint: "text-violet-300" },
 };
 
@@ -57,7 +57,7 @@ export default function IssueDetail() {
     return (
       <Card className="p-10 text-center text-sm text-zinc-500">
         Issue not found.{" "}
-        <Link to="/issues" className="text-indigo-300 hover:text-indigo-200">
+        <Link to="/issues" className="text-[#f5a623] hover:text-[#f5c164]">
           Back to issues →
         </Link>
       </Card>
@@ -136,7 +136,7 @@ export default function IssueDetail() {
           </div>
           <div className="flex h-1 w-24 overflow-hidden rounded-full bg-white/[0.06]">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-400 transition-all duration-700"
+              className="h-full rounded-full bg-gradient-to-r from-[#f5a623] to-[#e8892b] transition-all duration-700"
               style={{ width: `${issue.priorityScore}%` }}
             />
           </div>
@@ -239,7 +239,7 @@ export default function IssueDetail() {
                             href={e.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="mt-1 inline-flex max-w-full items-center gap-1.5 truncate font-mono text-[10.5px] text-indigo-300/80 transition hover:text-indigo-200"
+                            className="mt-1 inline-flex max-w-full items-center gap-1.5 truncate font-mono text-[10.5px] text-[#f5a623]/80 transition hover:text-[#f5c164]"
                           >
                             <Favicon url={e.url} />
                             <span className="truncate">{e.url}</span>
@@ -329,13 +329,13 @@ export default function IssueDetail() {
                                 done
                                   ? "text-emerald-400"
                                   : current
-                                    ? "animate-pulse-dot text-indigo-300"
+                                    ? "animate-pulse-dot text-[#f5a623]"
                                     : "text-zinc-700"
                               }
                             >
                               {done ? "●" : "○"}
                             </span>
-                            <span className={done ? "text-zinc-400" : current ? "text-indigo-200" : "text-zinc-600"}>
+                            <span className={done ? "text-zinc-400" : current ? "text-[#f5c164]" : "text-zinc-600"}>
                               {step}
                             </span>
                           </div>

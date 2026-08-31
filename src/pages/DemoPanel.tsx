@@ -75,7 +75,7 @@ function LiveResearchCard() {
       <SectionTitle
         right={
           status.running ? (
-            <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-300">
+            <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#f5a623]">
               <LiveDot /> researching
             </span>
           ) : undefined
@@ -135,7 +135,7 @@ function LiveResearchCard() {
           </div>
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-400 transition-all duration-1000"
+              className="h-full rounded-full bg-gradient-to-r from-[#f5a623] to-[#e8892b] transition-all duration-1000"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -254,7 +254,7 @@ function Step({
           done
             ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
             : loading
-              ? "animate-pulse-dot border-indigo-500/50 bg-indigo-500/15 text-indigo-300"
+              ? "animate-pulse-dot border-indigo-500/50 bg-[#f5a623]/12 text-[#f5a623]"
               : "border-white/[0.1] bg-zinc-900 text-zinc-500"
         }`}
       >
@@ -343,7 +343,7 @@ export default function DemoPanel() {
                 disabled={!!busy}
                 className={`rounded-xl border px-3.5 py-2 text-[12.5px] font-medium transition-all disabled:opacity-40 ${
                   scenario === key
-                    ? "border-indigo-400/50 bg-indigo-500/15 text-indigo-200 shadow-[0_0_16px_rgba(99,102,241,0.15)]"
+                    ? "border-[#f5a623]/50 bg-[#f5a623]/12 text-[#f5c164] shadow-[0_0_16px_rgba(99,102,241,0.15)]"
                     : "border-white/[0.08] bg-white/[0.02] text-zinc-400 hover:border-white/20 hover:text-zinc-200"
                 }`}
               >

@@ -3,7 +3,8 @@ import { ConvexProvider, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { BrowserRouter, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { convex, api } from "./lib/convex";
-import { LiveDot, timeAgo, Button } from "./components/ui";
+import { LiveDot, timeAgo } from "./components/ui";
+import Landing from "./pages/Landing";
 import Overview from "./pages/Overview";
 import Issues from "./pages/Issues";
 import IssueDetail from "./pages/IssueDetail";
@@ -43,7 +44,7 @@ function Header() {
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-white/[0.06] bg-zinc-950/70 px-8 backdrop-blur-xl">
       <div className="flex items-baseline gap-3">
-        <h1 className="text-[15px] font-semibold tracking-tight text-zinc-100">{title}</h1>
+        <h1 className="text-[16px] font-medium tracking-tight text-[#efe9dc]" style={{ fontFamily: "var(--font-display)" }}>{title}</h1>
         <span className="hidden text-xs text-zinc-500 md:inline">{subtitle}</span>
       </div>
       <div className="flex items-center gap-3">
@@ -69,7 +70,7 @@ function Sidebar() {
     <aside className="flex w-60 shrink-0 flex-col border-r border-white/[0.06]">
       {/* brand */}
       <div className="flex items-center gap-3 px-5 pb-6 pt-6">
-        <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/80 to-violet-600/80 text-base shadow-[0_0_24px_rgba(99,102,241,0.35)]">
+        <div className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-[#f5a623]/30 bg-[#f5a623]/10 text-base shadow-[0_0_20px_rgba(245,166,35,0.15)]">
           🛰️
         </div>
         <div>
@@ -124,7 +125,7 @@ function Sidebar() {
             Agent
           </div>
           <div className="mt-2 flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500/70 to-violet-600/70 text-[10px]">
+            <span className="flex h-6 w-6 items-center justify-center rounded-lg border border-[#f5a623]/25 bg-[#f5a623]/10 text-[10px]">
               🛰️
             </span>
             <div className="min-w-0">
@@ -173,65 +174,6 @@ const JWT_KEY =
   "__convexAuthJWT_" +
   (import.meta as any).env.VITE_CONVEX_URL.replace(/[^a-z0-9]/gi, "");
 
-function Login() {
-  const { signIn } = useAuthActions();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const enter = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await signIn("password", {
-        email: "demo@customer-intel.app",
-        password: "watch-the-customer",
-        flow: "signIn",
-      });
-    } catch {
-      try {
-        await signIn("password", {
-          email: "demo@customer-intel.app",
-          password: "watch-the-customer",
-          flow: "signUp",
-        });
-      } catch (e: any) {
-        setError(e.message?.slice(0, 100) ?? "sign-in failed");
-      }
-    } finally {
-      // Convex Auth stored the session tokens — unlock the workspace.
-      window.location.reload();
-    }
-  };
-
-  return (
-    <div className="flex h-full items-center justify-center px-6">
-      <div className="w-full max-w-sm">
-        <div className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/80 to-violet-600/80 text-xl shadow-[0_0_30px_rgba(99,102,241,0.3)]">
-            🛰️
-          </div>
-          <h1 className="mt-4 text-lg font-semibold tracking-tight">Customer Intelligence</h1>
-          <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-            The morning brief for anyone with customers: an autonomous employee that reads
-            your inbox and the public web every day, investigates what changed, and tells
-            you what to fix.
-          </p>
-        </div>
-        <div className="mt-6 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5">
-          <Button variant="primary" onClick={enter} disabled={busy} className="w-full">
-            {busy ? "Signing in…" : "Enter the demo workspace →"}
-          </Button>
-          <p className="mt-3 text-center text-[10px] leading-relaxed text-zinc-600">
-            One click, no signup — you'll watch the live agent workspace
-            (email + web monitoring, realtime dashboard). Powered by Convex Auth.
-          </p>
-          {error && <p className="mt-2 text-center text-[10px] text-red-400">{error}</p>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function Shell() {
   return (
     <div className="flex h-full">
@@ -270,7 +212,7 @@ function AuthGate() {
     };
   }, []);
 
-  if (!session) return <Login />;
+  if (!session) return <Landing />;
   return (
     <BrowserRouter>
       <Shell />
