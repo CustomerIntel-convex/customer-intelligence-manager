@@ -295,6 +295,8 @@ function Step({
 
 export default function DemoPanel() {
   const [busy, setBusy] = useState<string | null>(null);
+  const ws = useQuery(api.tenant.myWorkspace, {});
+  const isDemo = ws?.isDemo !== false;
   const company = useQuery(api.queries.getCompany, {});
   const issues = useQuery(api.queries.listIssues, {});
   const reports = useQuery(api.queries.listReports, {});
@@ -330,44 +332,49 @@ export default function DemoPanel() {
 
   return (
       <div className="space-y-5">
-        {/* scenario switcher */}
+        {/* scenario switcher — demo workspace only */}
+        {isDemo && (
         <div className="ruled pt-4">
-          <KickerHead right={<span className="text-[10px] text-zinc-500">{copy.product}</span>}>
+          <KickerHead right={<span className="font-mono text-[9.5px] text-[#6f695c]">{copy.product}</span>}>
             Watched product
           </KickerHead>
-          <div className="flex flex-wrap gap-2">
+          <div className="mt-2 flex flex-wrap gap-2">
             {Object.entries(SCENARIO_COPY).map(([key, sc]) => (
               <button
                 key={key}
                 onClick={run(`switch:${key}`, () => configureScenario({ scenario: key }))}
                 disabled={!!busy}
-                className={`rounded-xl border px-3.5 py-2 text-[12.5px] font-medium transition-all disabled:opacity-40 ${
+                className={`border px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] transition-colors disabled:opacity-40 ${
                   scenario === key
-                    ? "border-[#f5a623]/50 bg-[#f5a623]/12 text-[#f5c164] shadow-[0_0_16px_rgba(99,102,241,0.15)]"
-                    : "border-white/[0.08] bg-white/[0.02] text-zinc-400 hover:border-white/20 hover:text-zinc-200"
+                    ? "border-[#f0a428]/60 bg-[#f0a428]/10 text-[#f0a428]"
+                    : "border-[#ece5d5]/15 text-[#6f695c] hover:border-[#ece5d5]/35 hover:text-[#c3baa8]"
                 }`}
               >
                 {busy === `switch:${key}` ? "switching…" : sc.label}
-                {scenario === key && " ✓"}
+                {scenario === key && " ▪"}
               </button>
             ))}
           </div>
-          <p className="mt-2.5 text-[10.5px] leading-relaxed text-zinc-600">
+          <p className="mt-2.5 text-[10.5px] leading-relaxed text-[#6f695c]">
             Switching rewrites the company identity, monitored sources and story data —
             inboxes stay the same. Steps below then run the scenario.
           </p>
         </div>
+        )}
 
+      {isDemo && (
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-[13px] text-zinc-400">
-          The Acme AI scenario, step by step — every button runs the real pipeline.
+        <p className="text-[13px] text-[#a89f8c]">
+          The scenario, step by step — every button runs the real pipeline.
         </p>
-        <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-zinc-500">
+        <span className="flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-[0.16em] text-[#86d99a]">
           <LiveDot /> live
         </span>
       </div>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-3">
+        {isDemo ? (
         <div className="lg:col-span-2">
           <div className="border-b border-white/[0.06] px-5 py-3.5">
             <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
@@ -438,6 +445,34 @@ export default function DemoPanel() {
             />
           </div>
         </div>
+        ) : (
+        <div className="ruled pt-4 lg:col-span-2">
+          <KickerHead>Your workspace</KickerHead>
+          <div
+            className="mt-2 text-[22px] font-medium tracking-tight text-[#ece5d5]"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Watching {company?.product ?? "your product"}
+          </div>
+          <p className="mt-3 max-w-lg text-[12.5px] leading-relaxed text-[#a89f8c]">
+            This is your own isolated workspace. The agent monitors Hacker News, Reddit and
+            the open web for your product, clusters complaints into issues with evidence,
+            and remembers what it has seen. Use the live research burst on the right to
+            sweep the web now, or just ask in the Ask tab.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Button onClick={run("Investigate top issue", () => investigateNow({}))} disabled={!!busy || (issues?.length ?? 0) === 0}>
+              {busy === "Investigate top issue" ? "investigating…" : "⌕ Investigate top issue"}
+            </Button>
+          </div>
+          {(issues?.length ?? 0) === 0 && (
+            <p className="mt-3 font-mono text-[10px] leading-relaxed text-[#8a8271]">
+              no issues yet — run a research burst or wait for the background monitor
+              (every 30 minutes) to find your first signals.
+            </p>
+          )}
+        </div>
+        )}
 
         <div className="space-y-4">
           <LiveResearchCard />

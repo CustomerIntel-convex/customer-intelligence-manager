@@ -333,7 +333,11 @@ export const updateSource = internalMutation({
 export const getSetupStateInternal = internalMutation({
   args: {},
   handler: async (ctx) => {
-    const company = await ctx.db.query("companies").first();
+    const flagged = await ctx.db
+      .query("companies")
+      .filter((q: any) => q.eq(q.field("isDemo"), true))
+      .first();
+    const company = flagged ?? (await ctx.db.query("companies").first());
     if (!company) return { companyId: null, ruleCount: 0, sourceCount: 0 };
     const rules = await ctx.db
       .query("watchRules")
@@ -364,7 +368,13 @@ export const upsertCompanyInternal = internalMutation({
   handler: async (ctx, args) => {
     let company = await ctx.db.query("companies").first();
     if (!company) {
-      const id = await ctx.db.insert("companies", { ...args, createdAt: now() });
+      // the bootstrap setup creates the shared demo workspace
+      const id = await ctx.db.insert("companies", {
+        ...args,
+        isDemo: true,
+        listening: true,
+        createdAt: now(),
+      });
       return id;
     }
     await ctx.db.patch(company._id, args);
@@ -416,6 +426,7 @@ export const configureScenarioInternal = internalMutation({
     product: v.string(),
     productKeywords: v.array(v.string()),
     realProduct: v.boolean(),
+    company: v.optional(v.id("companies")),
     sources: v.array(
       v.object({
         name: v.string(),
@@ -425,7 +436,16 @@ export const configureScenarioInternal = internalMutation({
     ),
   },
   handler: async (ctx, args) => {
-    const company = await ctx.db.query("companies").first();
+    let company: any;
+    if (args.company) {
+      company = await ctx.db.get(args.company);
+    } else {
+      const flagged = await ctx.db
+        .query("companies")
+        .filter((q: any) => q.eq(q.field("isDemo"), true))
+        .first();
+      company = flagged ?? (await ctx.db.query("companies").first());
+    }
     if (!company) throw new Error("Run setup first");
     await ctx.db.patch(company._id, {
       name: args.name,

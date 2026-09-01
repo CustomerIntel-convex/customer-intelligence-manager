@@ -12,11 +12,13 @@ import { authTables } from "@convex-dev/auth/server";
 export default defineSchema({
   ...authTables,
 
-  // The company the agent works for (single-tenant for the hackathon).
-  // The company the agent works for (single-tenant for the hackathon).
+  // The company the agent works for. Multiple companies can coexist:
+  // the seeded demo workspace (isDemo) plus one per signed-up customer.
   companies: defineTable({
     name: v.string(),
     product: v.string(),
+    isDemo: v.optional(v.boolean()), // seeded demo workspace shared by judges
+    listening: v.optional(v.boolean()), // included in the background monitor cycle
     productKeywords: v.array(v.string()), // terms used to spot relevant discussions
     employeeEmail: v.optional(v.string()), // who receives internal reports
     agentInbox: v.optional(v.string()), // the agent's AgentMail address
@@ -41,6 +43,17 @@ export default defineSchema({
     ),
     createdAt: v.number(),
   }),
+
+  // Workspace membership: which authenticated user belongs to which company.
+  // One company per user; the demo account is linked lazily to the demo company.
+  members: defineTable({
+    userId: v.string(), // Convex Auth user id
+    companyId: v.id("companies"),
+    email: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_company", ["companyId"]),
 
   // Monitored public web sources with change detection state.
   sources: defineTable({
@@ -178,6 +191,7 @@ export default defineSchema({
 
   // Dashboard chat with the agent.
   chatMessages: defineTable({
+    company: v.optional(v.id("companies")),
     role: v.string(), // "user" | "agent"
     content: v.string(),
     // structured side-effects the chat can trigger

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useAction, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../lib/convex";
 import { Button } from "../components/ui";
 
@@ -13,7 +13,7 @@ const SUGGESTIONS = [
 
 export default function Chat() {
   const messages = useQuery(api.queries.listChat, {});
-  const send = useAction(api.chat.send);
+  const send = useMutation(api.chat.send);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);

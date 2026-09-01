@@ -1,6 +1,7 @@
 import { mutation, action, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
+import { demoCompanyDoc } from "./lib/tenant";
 import { SCENARIOS, ScenarioKey, rampFor } from "./lib/scenarios";
 import { DAY_MS, now } from "./lib/util";
 
@@ -21,22 +22,54 @@ function pack(company: { scenario?: string }) {
 export const resetDemo = mutation({
   args: {},
   handler: async (ctx) => {
-    for (const table of [
-      "signals",
-      "issues",
-      "evidence",
-      "investigations",
-      "reports",
-      "agentTasks",
-      "chatMessages",
-    ] as const) {
-      let n = 0;
-      let batch = await ctx.db.query(table).collect();
-      while (batch.length > 0 && n++ < 100) {
-        for (const doc of batch) await ctx.db.delete(doc._id);
-        batch = await ctx.db.query(table).collect();
+    // scoped to the DEMO workspace only — tenants keep their state
+    const demo = await demoCompanyDoc(ctx as any);
+    if (!demo) throw new Error("Run setup first");
+    const cid = demo._id;
+
+    const demoIssues = await ctx.db
+      .query("issues")
+      .withIndex("by_company", (q) => q.eq("company", cid))
+      .collect();
+    const demoIssueIds = new Set(demoIssues.map((i) => i._id));
+
+    for (const doc of demoIssues) await ctx.db.delete(doc._id);
+
+    let batch = await ctx.db
+      .query("signals")
+      .withIndex("by_company", (q) => q.eq("company", cid))
+      .collect();
+    for (const doc of batch) await ctx.db.delete(doc._id);
+
+    for (const table of ["evidence", "investigations"] as const) {
+      const rows = await ctx.db.query(table).collect();
+      for (const doc of rows) {
+        if (demoIssueIds.has(doc.issue as any)) await ctx.db.delete(doc._id);
       }
     }
+
+    const reports = await ctx.db
+      .query("reports")
+      .withIndex("by_company", (q) => q.eq("company", cid))
+      .collect();
+    for (const doc of reports) await ctx.db.delete(doc._id);
+
+    const tasks = await ctx.db
+      .query("agentTasks")
+      .withIndex("by_company", (q) => q.eq("company", cid))
+      .collect();
+    for (const doc of tasks) await ctx.db.delete(doc._id);
+    // legacy rows (pre-multi-tenant) belong to the demo workspace
+    const legacyTasks = (await ctx.db.query("agentTasks").collect()).filter(
+      (t: any) => t.company === undefined
+    );
+    for (const doc of legacyTasks) await ctx.db.delete(doc._id);
+
+    const chat = (await ctx.db.query("chatMessages").collect()).filter(
+      (m: any) => m.company === undefined || m.company === cid
+    );
+    for (const doc of chat) await ctx.db.delete(doc._id);
+
     // mark any not-yet-routed remote mail as seen so nothing reprocesses
     await ctx.scheduler.runAfter(0, internal.monitor.adoptExistingMail, {});
     return "reset";
@@ -53,7 +86,7 @@ export const configureScenario = mutation({
     const key = args.scenario as ScenarioKey;
     const pack = SCENARIOS[key];
     if (!pack) throw new Error(`Unknown scenario: ${args.scenario}`);
-    const company = await ctx.db.query("companies").first();
+    const company = await demoCompanyDoc(ctx as any);
     if (!company) throw new Error("Run setup first");
     await ctx.runMutation(internal.state.configureScenarioInternal, {
       scenario: key,
@@ -75,7 +108,7 @@ export const configureScenario = mutation({
 export const seedHistory = mutation({
   args: {},
   handler: async (ctx) => {
-    const company = await ctx.db.query("companies").first();
+    const company = await demoCompanyDoc(ctx as any);
     if (!company) throw new Error("Run setup first");
     const { pack: p } = pack(company);
     const hist = p.history;
@@ -191,7 +224,7 @@ export const seedHistory = mutation({
 export const sendCustomerComplaint = mutation({
   args: {},
   handler: async (ctx) => {
-    const company = await ctx.db.query("companies").first();
+    const company = await demoCompanyDoc(ctx as any);
     if (!company?.agentInbox || !company.demoCustomerEmail)
       throw new Error("Run setup first");
     const { pack: p } = pack(company);
@@ -215,7 +248,7 @@ export const sendCustomerComplaint = mutation({
 export const seedPublicSignals = mutation({
   args: {},
   handler: async (ctx) => {
-    const company = await ctx.db.query("companies").first();
+    const company = await demoCompanyDoc(ctx as any);
     if (!company) throw new Error("Run setup first");
     const { key } = pack(company);
     const ramp = rampFor(key);
@@ -251,11 +284,13 @@ export const seedPublicSignals = mutation({
  * product name; story data is expected to be reset by the caller.
  */
 export const reconfigureProductInternal = internalMutation({
-  args: { product: v.string() },
+  args: { product: v.string(), company: v.optional(v.id("companies")) },
   handler: async (ctx, args) => {
     const product = args.product.trim().slice(0, 60);
     if (product.length < 2) throw new Error("Product name too short");
-    const company = await ctx.db.query("companies").first();
+    const company = args.company
+      ? await ctx.db.get(args.company)
+      : await demoCompanyDoc(ctx as any);
     if (!company) throw new Error("Run setup first");
     await ctx.runMutation(internal.state.configureScenarioInternal, {
       scenario: "custom",
@@ -263,6 +298,7 @@ export const reconfigureProductInternal = internalMutation({
       product,
       productKeywords: [product.toLowerCase()],
       realProduct: true,
+      company: company._id,
       sources: [
         { name: "Hacker News mentions", kind: "hn", config: { query: product } },
         { name: "Reddit discussions", kind: "reddit_search", config: { query: product } },
@@ -284,7 +320,7 @@ export const reconfigureProductInternal = internalMutation({
 export const employeeAsk = mutation({
   args: { question: v.string() },
   handler: async (ctx, args) => {
-    const company = await ctx.db.query("companies").first();
+    const company = await demoCompanyDoc(ctx as any);
     if (!company?.agentInbox || !company?.employeeEmail)
       throw new Error("Run setup first");
 

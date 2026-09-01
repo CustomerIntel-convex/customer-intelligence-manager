@@ -11,6 +11,7 @@ import IssueDetail from "./pages/IssueDetail";
 import Mail from "./pages/Mail";
 import Chat from "./pages/Chat";
 import DemoPanel from "./pages/DemoPanel";
+import Onboarding from "./pages/Onboarding";
 
 const RAIL = [
   { to: "/", n: "01", label: "Brief", end: true },
@@ -208,6 +209,22 @@ function Shell() {
 const JWT_KEY =
   "__convexAuthJWT_" + (import.meta as any).env.VITE_CONVEX_URL.replace(/[^a-z0-9]/gi, "");
 
+/** Signed in — but does this account have a workspace yet? */
+function WorkspaceGate() {
+  const ws = useQuery(api.tenant.myWorkspace, {});
+  if (ws === undefined) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#6f695c]">
+          opening the brief…
+        </span>
+      </div>
+    );
+  }
+  if (ws.needsSetup) return <Onboarding />;
+  return <Shell />;
+}
+
 function AuthGate() {
   const [session, setSession] = useState<boolean>(() => !!localStorage.getItem(JWT_KEY));
   useEffect(() => {
@@ -222,7 +239,7 @@ function AuthGate() {
   if (!session) return <Landing />;
   return (
     <BrowserRouter>
-      <Shell />
+      <WorkspaceGate />
     </BrowserRouter>
   );
 }

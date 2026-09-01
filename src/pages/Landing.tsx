@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { Button, Kicker, todayLine } from "../components/ui";
+import { PENDING_PRODUCT_KEY } from "./Onboarding";
 
 const LOOP = ["OBSERVE", "DETECT", "INVESTIGATE", "REMEMBER", "PRIORITIZE", "REPORT"];
 
@@ -39,6 +40,9 @@ export default function Landing() {
   const { signIn } = useAuthActions();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [signUpOpen, setSignUpOpen] = useState(false);
+  const [suBusy, setSuBusy] = useState(false);
+  const [form, setForm] = useState({ email: "", password: "", product: "" });
 
   const enter = async () => {
     setBusy(true);
@@ -63,6 +67,30 @@ export default function Landing() {
       }
     }
     window.location.reload();
+  };
+
+  // create an account + a workspace watching YOUR product
+  const createOwn = async () => {
+    if (suBusy) return;
+    if (!form.email.includes("@") || form.password.length < 8 || form.product.trim().length < 2) {
+      setError("email, a password of 8+ characters, and a product name are required");
+      return;
+    }
+    setSuBusy(true);
+    setError(null);
+    try {
+      localStorage.setItem(PENDING_PRODUCT_KEY, form.product.trim());
+      await signIn("password", {
+        email: form.email.trim(),
+        password: form.password,
+        flow: "signUp",
+      });
+      window.location.reload();
+    } catch (e: any) {
+      localStorage.removeItem(PENDING_PRODUCT_KEY);
+      setError(e.message?.slice(0, 120) ?? "could not create the account");
+      setSuBusy(false);
+    }
   };
 
   return (
@@ -126,6 +154,59 @@ export default function Landing() {
           <span className="font-mono text-[10.5px] leading-relaxed tracking-[0.06em] text-[#8a8271]">
             one click, no signup · a live agent, a real business
           </span>
+        </div>
+
+        {/* create your own workspace */}
+        <div className="mt-9 border-t border-[#ece5d5]/15 pt-5">
+          {!signUpOpen ? (
+            <button
+              onClick={() => setSignUpOpen(true)}
+              className="font-mono text-[10.5px] tracking-[0.06em] text-[#8a8271] underline decoration-[#4d483e] underline-offset-4 transition-colors hover:text-[#ece5d5]"
+            >
+              Or point it at your own product →
+            </button>
+          ) : (
+            <div className="max-w-xl">
+              <Kicker className="text-[#f0a428]">Your own workspace</Kicker>
+              <p className="mt-2 text-[12.5px] leading-relaxed text-[#a89f8c]">
+                An account of your own: name your product and the agent sets up its watch —
+                sources, keywords, live research — in one step.
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <input
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="you@company.com"
+                  className="border-b border-[#ece5d5]/25 bg-transparent pb-1.5 text-[13px] text-[#ece5d5] outline-none placeholder:text-[#4d483e] focus:border-[#f0a428]"
+                />
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  placeholder="password (8+ chars)"
+                  className="border-b border-[#ece5d5]/25 bg-transparent pb-1.5 text-[13px] text-[#ece5d5] outline-none placeholder:text-[#4d483e] focus:border-[#f0a428]"
+                />
+                <input
+                  value={form.product}
+                  onChange={(e) => setForm({ ...form, product: e.target.value })}
+                  onKeyDown={(e) => e.key === "Enter" && createOwn()}
+                  placeholder="your product's name"
+                  className="border-b border-[#ece5d5]/25 bg-transparent pb-1.5 text-[13px] text-[#ece5d5] outline-none placeholder:text-[#4d483e] focus:border-[#f0a428]"
+                />
+              </div>
+              <div className="mt-4 flex items-center gap-4">
+                <Button onClick={createOwn} disabled={suBusy} className="px-5 py-2">
+                  {suBusy ? "Creating…" : "Create workspace →"}
+                </Button>
+                <button
+                  onClick={() => setSignUpOpen(false)}
+                  className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-[#6f695c] hover:text-[#ece5d5]"
+                >
+                  back
+                </button>
+              </div>
+            </div>
+          )}
         </div>
         {error && <p className="mt-3 font-mono text-[10px] text-[#e5484d]">{error}</p>}
       </main>

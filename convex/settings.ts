@@ -2,6 +2,7 @@ import { query, mutation, internalAction, internalMutation } from "./_generated/
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { enabled as envEnabled } from "./lib/firecrawl";
+import { myCompanyDoc } from "./lib/tenant";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Web-research (Firecrawl) control — toggleable from the dashboard.
@@ -12,7 +13,7 @@ import { enabled as envEnabled } from "./lib/firecrawl";
 export const getWebResearch = query({
   args: {},
   handler: async (ctx) => {
-    const company = await ctx.db.query("companies").first();
+    const company = await myCompanyDoc(ctx as any);
     return {
       enabled: company?.webResearchEnabled ?? envEnabled(),
       credits: company?.webResearchCredits ?? null,
@@ -24,7 +25,7 @@ export const getWebResearch = query({
 export const setWebResearch = mutation({
   args: { enabled: v.boolean() },
   handler: async (ctx, args) => {
-    const company = await ctx.db.query("companies").first();
+    const company = await myCompanyDoc(ctx as any);
     if (!company) throw new Error("Run setup first");
     await ctx.db.patch(company._id, { webResearchEnabled: args.enabled });
     // refresh the credit balance shown next to the toggle (free endpoint)
@@ -37,8 +38,6 @@ export const setWebResearch = mutation({
 export const refreshCredits = internalAction({
   args: {},
   handler: async (ctx) => {
-    const company = (await ctx.runQuery(internal.queries.getCompanyInternal, {})) as any;
-    if (!company) return;
     const key = process.env.FIRECRAWL_API_KEY;
     if (!key) return;
     try {
@@ -58,11 +57,13 @@ export const refreshCredits = internalAction({
   },
 });
 
+// One shared Firecrawl pool — every company shows the same balance.
 export const storeCredits = internalMutation({
   args: { credits: v.number() },
   handler: async (ctx, args) => {
-    const company = await ctx.db.query("companies").first();
-    if (!company) return;
-    await ctx.db.patch(company._id, { webResearchCredits: args.credits });
+    const companies = await ctx.db.query("companies").collect();
+    for (const company of companies) {
+      await ctx.db.patch(company._id, { webResearchCredits: args.credits });
+    }
   },
 });

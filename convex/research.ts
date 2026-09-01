@@ -5,6 +5,7 @@ import { fetchSource } from "./agent";
 import * as firecrawl from "./lib/firecrawl";
 import * as analysis from "./lib/analysis";
 import { clamp, now } from "./lib/util";
+import { myCompanyDoc } from "./lib/tenant";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Live research burst — bounded, visible Firecrawl usage for demos.
@@ -52,9 +53,11 @@ async function buildAngles(ctx: any, company: any): Promise<string[]> {
 }
 
 export const startResearch = mutation({
-  args: { durationSec: v.optional(v.number()) },
+  args: { durationSec: v.optional(v.number()), company: v.optional(v.id("companies")) },
   handler: async (ctx, args) => {
-    const company = await ctx.db.query("companies").first();
+    const company = args.company
+      ? await ctx.db.get(args.company)
+      : await myCompanyDoc(ctx as any);
     if (!company) throw new Error("Run setup first");
     const durationSec = Math.min(Math.max(args.durationSec ?? 120, 30), 600);
     await ctx.db.patch(company._id, {
@@ -75,8 +78,8 @@ export const startResearch = mutation({
       detail: "Fetching monitored sources + rotating product searches",
       startedAt: now(),
     });
-    await ctx.scheduler.runAfter(0, internal.research.scanInbox, {});
-    await ctx.scheduler.runAfter(0, internal.research.sweep, {});
+    await ctx.scheduler.runAfter(0, internal.research.scanInbox, { company: company._id });
+    await ctx.scheduler.runAfter(0, internal.research.sweep, { company: company._id });
     return durationSec;
   },
 });
@@ -86,9 +89,11 @@ export const startResearch = mutation({
  * (only mail belonging to the active scenario) and log it to the feed.
  */
 export const scanInbox = internalAction({
-  args: {},
-  handler: async (ctx) => {
-    const company = (await ctx.runQuery(internal.queries.getCompanyInternal, {})) as any;
+  args: { company: v.optional(v.id("companies")) },
+  handler: async (ctx, args) => {
+    const company = (await ctx.runQuery(internal.queries.getCompanyInternal, {
+      company: args.company,
+    })) as any;
     if (!company?.agentInbox) return;
 
     const activeScenario = company.scenario ?? "acme";
@@ -150,7 +155,7 @@ export const listRoutedInternal = internalQuery({
 export const stopResearch = mutation({
   args: {},
   handler: async (ctx) => {
-    const company = await ctx.db.query("companies").first();
+    const company = await myCompanyDoc(ctx as any);
     if (!company?.researchSession?.running) return "not running";
     const s = company.researchSession;
     await ctx.db.patch(company._id, {
@@ -172,7 +177,7 @@ export const stopResearch = mutation({
 export const getStatus = query({
   args: {},
   handler: async (ctx) => {
-    const company = await ctx.db.query("companies").first();
+    const company = await myCompanyDoc(ctx as any);
     const s = company?.researchSession;
     return {
       running: !!s?.running && (s?.endsAt ?? 0) > now(),
@@ -188,12 +193,14 @@ export const getStatus = query({
 
 /** One sweep iteration; chains itself while the session window is open. */
 export const sweep = internalAction({
-  args: {},
-  handler: async (ctx) => {
-    const company = (await ctx.runQuery(internal.queries.getCompanyInternal, {})) as any;
+  args: { company: v.optional(v.id("companies")) },
+  handler: async (ctx, args) => {
+    const company = (await ctx.runQuery(internal.queries.getCompanyInternal, {
+      company: args.company,
+    })) as any;
     const s = company?.researchSession;
     if (!company || !s?.running || s.endsAt <= now()) {
-      await ctx.runMutation(internal.research.finalize, {});
+      await ctx.runMutation(internal.research.finalize, { company: args.company });
       return;
     }
     const iteration = s.iterations + 1;
@@ -303,6 +310,7 @@ export const sweep = internalAction({
     }
 
     await ctx.runMutation(internal.research.bumpStats, {
+      company: args.company,
       iteration,
       itemsSeen: items.length + hits.length,
       signalsFound,
@@ -310,17 +318,26 @@ export const sweep = internalAction({
 
     // 4) chain while the window is open
     if (s.endsAt > now() + SWEEP_GAP_MS) {
-      await ctx.scheduler.runAfter(SWEEP_GAP_MS, internal.research.sweep, {});
+      await ctx.scheduler.runAfter(SWEEP_GAP_MS, internal.research.sweep, {
+        company: args.company,
+      });
     } else {
-      await ctx.runMutation(internal.research.finalize, {});
+      await ctx.runMutation(internal.research.finalize, { company: args.company });
     }
   },
 });
 
 export const bumpStats = internalMutation({
-  args: { iteration: v.number(), itemsSeen: v.number(), signalsFound: v.number() },
+  args: {
+    company: v.optional(v.id("companies")),
+    iteration: v.number(),
+    itemsSeen: v.number(),
+    signalsFound: v.number(),
+  },
   handler: async (ctx, args) => {
-    const company = await ctx.db.query("companies").first();
+    const company = args.company
+      ? await ctx.db.get(args.company)
+      : await ctx.db.query("companies").first();
     if (!company?.researchSession) return;
     const s = company.researchSession;
     await ctx.db.patch(company._id, {
@@ -335,9 +352,11 @@ export const bumpStats = internalMutation({
 });
 
 export const finalize = internalMutation({
-  args: {},
-  handler: async (ctx) => {
-    const company = await ctx.db.query("companies").first();
+  args: { company: v.optional(v.id("companies")) },
+  handler: async (ctx, args) => {
+    const company = args.company
+      ? await ctx.db.get(args.company)
+      : await ctx.db.query("companies").first();
     if (!company?.researchSession?.running) return;
     const s = company.researchSession;
     await ctx.db.patch(company._id, { researchSession: { ...s, running: false } });

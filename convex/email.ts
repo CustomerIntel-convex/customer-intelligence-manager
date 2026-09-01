@@ -5,6 +5,7 @@ import { AgentMail } from "@agentmail/convex";
 import * as analysis from "./lib/analysis";
 import * as agentmailApi from "./lib/agentmailApi";
 import { clamp, now } from "./lib/util";
+import { companyForInbox, myCompanyDoc } from "./lib/tenant";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AgentMail integration — the agent's business inbox.
@@ -48,8 +49,9 @@ export const onMessageReceived = internalMutation({
     const m = normalize(args.message);
     if (!m.messageId) return;
 
-    const company = await ctx.db.query("companies").first();
-    if (!company || !company.agentInbox || m.inboxId !== company.agentInbox) return;
+    // route to the company that owns this inbox (multi-tenant)
+    const company = await companyForInbox(ctx as any, m.inboxId);
+    if (!company) return;
     if (bareAddress(m.from) === company.agentInbox.toLowerCase()) return; // self-sent
 
     // dedupe by message
@@ -84,7 +86,9 @@ export const handleInbound = internalAction({
     timestamp: v.number(),
   },
   handler: async (ctx, args) => {
-    const company = (await ctx.runQuery(internal.queries.getCompanyInternal, {})) as any;
+    const company = (await ctx.runQuery(internal.queries.companyForInboxInternal, {
+      inboxId: args.inboxId,
+    })) as any;
     if (!company) return;
 
     const intent = await analysis.classifyInboundEmail({
@@ -207,6 +211,7 @@ export const handleInbound = internalAction({
         // answer with the (now-updated) live state
         const liveState = (await ctx.runQuery(internal.queries.getLiveStateInternal, {
           focusIssue: issueId ?? undefined,
+          company: company._id,
         })) as string;
         const answer = await analysis.answerFromContext({
           question: intent.question,
@@ -323,7 +328,7 @@ export const listInboxMessages = query({
 export const getAgentInbox = query({
   args: {},
   handler: async (ctx) => {
-    const company = await ctx.db.query("companies").first();
+    const company = await myCompanyDoc(ctx as any);
     if (!company?.agentInbox) return { inbox: null, messages: [], routing: [] };
     const messages = await ctx.runQuery(
       components.agentmail.lib.listInboundMessages,
@@ -352,7 +357,7 @@ export const getAgentInbox = query({
 export const sendAsAgent = mutation({
   args: { to: v.string(), subject: v.string(), text: v.string() },
   handler: async (ctx, args) => {
-    const company = await ctx.db.query("companies").first();
+    const company = await myCompanyDoc(ctx as any);
     if (!company?.agentInbox) throw new Error("Company not set up");
     await ctx.scheduler.runAfter(0, internal.email.sendEmail, {
       inboxId: company.agentInbox,

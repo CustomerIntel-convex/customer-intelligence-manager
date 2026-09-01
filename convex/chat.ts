@@ -1,8 +1,9 @@
-import { action, mutation, internalMutation } from "./_generated/server";
+import { action, mutation, internalMutation, internalAction } from "./_generated/server";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import * as analysis from "./lib/analysis";
 import { now } from "./lib/util";
+import { myCompanyDoc } from "./lib/tenant";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Dashboard chat with the agent. Answers come from live Convex state; the chat
@@ -11,6 +12,7 @@ import { now } from "./lib/util";
 
 export const insertChatMessage = internalMutation({
   args: {
+    company: v.optional(v.id("companies")),
     role: v.string(),
     content: v.string(),
     triggeredInvestigation: v.optional(v.id("investigations")),
@@ -21,17 +23,45 @@ export const insertChatMessage = internalMutation({
   },
 });
 
-export const send = action({
+export const send = mutation({
   args: { message: v.string() },
   handler: async (ctx, args) => {
-    await ctx.runMutation(internal.chat.insertChatMessage, {
+    // mutations can read the authenticated user → tenant scope is enforced here
+    const company = await myCompanyDoc(ctx as any);
+    const companyId = company?._id as any;
+
+    await ctx.db.insert("chatMessages", {
+      company: companyId,
       role: "user",
       content: args.message,
+      createdAt: now(),
     });
 
-    const history = (await ctx.runQuery(internal.queries.listChatInternal, {})) as any[];
-    const liveState = (await ctx.runQuery(internal.queries.getLiveStateInternal, {})) as string;
-    const issues = (await ctx.runQuery(internal.queries.listActiveIssuesInternal, {})) as any[];
+    await ctx.scheduler.runAfter(0, internal.chat.sendAgent, {
+      message: args.message,
+      company: companyId,
+    });
+  },
+});
+
+/** The LLM half of chat: runs as an internal action with the company pinned. */
+export const sendAgent = internalAction({
+  args: { message: v.string(), company: v.optional(v.id("companies")) },
+  handler: async (ctx, args) => {
+    const companyId = args.company as any;
+    const company = (await ctx.runQuery(internal.queries.getCompanyInternal, {
+      company: args.company,
+    })) as any;
+
+    const history = (await ctx.runQuery(internal.queries.listChatInternal, {
+      company: companyId,
+    })) as any[];
+    const liveState = (await ctx.runQuery(internal.queries.getLiveStateInternal, {
+      company: companyId,
+    })) as string;
+    const issues = (await ctx.runQuery(internal.queries.listActiveIssuesInternal, {
+      company: companyId,
+    })) as any[];
 
     const result = await analysis.chatReply({
       question: args.message,
@@ -45,18 +75,30 @@ export const send = action({
     // side effect: re-aim the whole watch when the user names another product
     if (result.watchProduct) {
       const product = result.watchProduct.trim().slice(0, 60);
-      await ctx.runMutation(api.demo.resetDemo, {});
-      await ctx.runMutation(internal.demo.reconfigureProductInternal, { product });
-      await ctx.scheduler.runAfter(0, api.research.startResearch, { durationSec: 120 });
+      if (company?.isDemo) {
+        await ctx.runMutation(api.demo.resetDemo, {});
+      }
+      await ctx.runMutation(internal.demo.reconfigureProductInternal, {
+        product,
+        company: companyId,
+      });
+      await ctx.scheduler.runAfter(0, api.research.startResearch, {
+        durationSec: 120,
+        company: companyId,
+      });
       reply =
-        `Got it — switching my watch to "${product}". Sources re-aimed, memory of the old ` +
-        `product archived, and I'm starting fresh full-spectrum research on it now.\n\n` +
+        `Got it — switching my watch to "${product}". Sources re-aimed` +
+        (company?.isDemo ? ", memory of the old product archived" : "") +
+        `, and I'm starting fresh full-spectrum research on it now.\n\n` +
         result.reply;
     }
 
     // side effect: kick off live web research when asked for fresh voice
     if (result.startResearch && !result.watchProduct) {
-      await ctx.scheduler.runAfter(0, api.research.startResearch, { durationSec: 120 });
+      await ctx.scheduler.runAfter(0, api.research.startResearch, {
+        durationSec: 120,
+        company: companyId,
+      });
       reply += `\n\n→ Kicking off live web research on the product now — full spectrum, across the watch rules, plus an inbox scan. Watch the activity feed for the next two minutes.`;
     }
 
@@ -72,10 +114,9 @@ export const send = action({
 
       let issueId = target?._id ?? null;
       if (!issueId) {
-        const company = (await ctx.runQuery(internal.queries.getCompanyInternal, {})) as any;
         if (company) {
           issueId = await ctx.runMutation(internal.state.createIssue, {
-            company: company._id,
+            company: companyId,
             title: result.investigateIssueTitle,
             description: `Opened from a dashboard chat request: "${args.message}"`,
             severity: "medium",
@@ -105,6 +146,7 @@ export const send = action({
     }
 
     await ctx.runMutation(internal.chat.insertChatMessage, {
+      company: companyId,
       role: "agent",
       content: reply,
     });
@@ -117,7 +159,7 @@ export const runInvestigationNow = mutation({
   handler: async (ctx, args) => {
     let issueId = args.issueId;
     if (!issueId) {
-      const company = await ctx.db.query("companies").first();
+      const company = await myCompanyDoc(ctx as any);
       if (!company) throw new Error("Company not set up");
       const issues = await ctx.db
         .query("issues")

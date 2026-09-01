@@ -1,6 +1,7 @@
 import { query, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { fmtDate } from "./lib/util";
+import { myCompanyDoc } from "./lib/tenant";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Reactive queries powering the realtime dashboard + internal lookups used by
@@ -9,11 +10,75 @@ import { fmtDate } from "./lib/util";
 
 // ── Internal (agent) ─────────────────────────────────────────────────────────
 
+/** Company by id; no arg → demo company (legacy callers). */
 export const getCompanyInternal = internalQuery({
+  args: { company: v.optional(v.id("companies")) },
+  handler: async (ctx, args) => {
+    if (args.company) return (await ctx.db.get(args.company)) ?? null;
+    const flagged = await ctx.db
+      .query("companies")
+      .filter((q: any) => q.eq(q.field("isDemo"), true))
+      .first();
+    const company = flagged ?? (await ctx.db.query("companies").first());
+    return company ? { ...company, _id: company._id } : null;
+  },
+});
+
+/** Company for an authenticated user id (action contexts pass userId explicitly). */
+export const companyForUserInternal = internalQuery({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    if (!args.userId) {
+      const flagged = await ctx.db
+        .query("companies")
+        .filter((q: any) => q.eq(q.field("isDemo"), true))
+        .first();
+      return flagged ?? null;
+    }
+    const member = await ctx.db
+      .query("members")
+      .withIndex("by_userId", (q: any) => q.eq("userId", args.userId))
+      .first();
+    if (member) return await ctx.db.get(member.companyId);
+    const authUser = await ctx.db.get(args.userId as any);
+    if (authUser && (authUser as any).email === "demo@customer-intel.app") {
+      const flagged = await ctx.db
+        .query("companies")
+        .filter((q: any) => q.eq(q.field("isDemo"), true))
+        .first();
+      return flagged ?? (await ctx.db.query("companies").first());
+    }
+    return null;
+  },
+});
+
+/** Companies included in the background monitor cycle. */
+export const listeningCompaniesInternal = internalQuery({
   args: {},
   handler: async (ctx) => {
-    const company = await ctx.db.query("companies").first();
-    return company ? { ...company, _id: company._id } : null;
+    const all = await ctx.db.query("companies").collect();
+    return all
+      .filter((c: any) => c.listening !== false)
+      .map((c: any) => ({ ...c, _id: c._id }));
+  },
+});
+
+/** Company owning a given AgentMail inbox id (webhook/poll path). */
+export const companyForInboxInternal = internalQuery({
+  args: { inboxId: v.string() },
+  handler: async (ctx, args) =>
+    await ctx.db
+      .query("companies")
+      .filter((q: any) => q.eq(q.field("agentInbox"), args.inboxId))
+      .first(),
+});
+
+/** Companies with an agent inbox (mail poller iterates these). */
+export const inboxCompaniesInternal = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const all = await ctx.db.query("companies").collect();
+    return all.filter((c: any) => !!c.agentInbox).map((c: any) => ({ ...c, _id: c._id }));
   },
 });
 
@@ -107,9 +172,14 @@ export const recentInvestigationInternal = internalQuery({
  * This is what makes replies evidence-grounded rather than hallucinated.
  */
 export const getLiveStateInternal = internalQuery({
-  args: { focusIssue: v.optional(v.id("issues")) },
+  args: {
+    focusIssue: v.optional(v.id("issues")),
+    company: v.optional(v.id("companies")),
+  },
   handler: async (ctx, args) => {
-    const company = await ctx.db.query("companies").first();
+    const company = args.company
+      ? await ctx.db.get(args.company)
+      : await ctx.db.query("companies").first();
     if (!company) return "No company configured.";
     const issues = await ctx.db
       .query("issues")
@@ -161,21 +231,26 @@ export const getLiveStateInternal = internalQuery({
 });
 
 export const listChatInternal = internalQuery({
-  args: {},
-  handler: async (ctx) =>
-    (
-      await ctx.db
-        .query("chatMessages")
-        .withIndex("by_time")
-        .order("asc")
-        .collect()
-    ).map((m) => ({ ...m, _id: m._id })),
+  args: { company: v.optional(v.id("companies")) },
+  handler: async (ctx, args) => {
+    const rows = await ctx.db
+      .query("chatMessages")
+      .withIndex("by_time")
+      .order("asc")
+      .collect();
+    const scoped = args.company
+      ? rows.filter((m: any) => m.company === args.company || m.company === undefined)
+      : rows;
+    return scoped.map((m) => ({ ...m, _id: m._id }));
+  },
 });
 
 export const listActiveIssuesInternal = internalQuery({
-  args: {},
-  handler: async (ctx) => {
-    const company = await ctx.db.query("companies").first();
+  args: { company: v.optional(v.id("companies")) },
+  handler: async (ctx, args) => {
+    const company = args.company
+      ? await ctx.db.get(args.company)
+      : await ctx.db.query("companies").first();
     if (!company) return [];
     const issues = await ctx.db
       .query("issues")
@@ -207,12 +282,12 @@ function dailyBuckets(signals: { issue?: string; occurredAt: number }[], days = 
   return out;
 }
 
-// ── Public (dashboard) ──────────────────────────────────────────────────────
+// ── Public (dashboard) — every query is scoped to the caller's company ──────
 
 export const getCompany = query({
   args: {},
   handler: async (ctx) => {
-    const company = await ctx.db.query("companies").first();
+    const company = await myCompanyDoc(ctx as any);
     if (!company) return null;
     const sources = await ctx.db
       .query("sources")
@@ -229,7 +304,7 @@ export const getCompany = query({
 export const getOverview = query({
   args: {},
   handler: async (ctx) => {
-    const company = await ctx.db.query("companies").first();
+    const company = await myCompanyDoc(ctx as any);
     if (!company) return null;
     const issues = await ctx.db
       .query("issues")
@@ -259,7 +334,7 @@ export const getOverview = query({
 
     const activity = await ctx.db
       .query("agentTasks")
-      .withIndex("by_started")
+      .withIndex("by_company", (q) => q.eq("company", company._id))
       .order("desc")
       .take(18);
 
@@ -304,7 +379,7 @@ export const getOverview = query({
 export const listIssues = query({
   args: {},
   handler: async (ctx) => {
-    const company = await ctx.db.query("companies").first();
+    const company = await myCompanyDoc(ctx as any);
     if (!company) return [];
     const issues = await ctx.db
       .query("issues")
@@ -319,7 +394,7 @@ export const listIssues = query({
 export const listIssuesDetailed = query({
   args: {},
   handler: async (ctx) => {
-    const company = await ctx.db.query("companies").first();
+    const company = await myCompanyDoc(ctx as any);
     if (!company) return [];
     const issues = await ctx.db
       .query("issues")
@@ -349,7 +424,7 @@ export const listIssuesDetailed = query({
 export const getNavBadges = query({
   args: {},
   handler: async (ctx) => {
-    const company = await ctx.db.query("companies").first();
+    const company = await myCompanyDoc(ctx as any);
     if (!company) return { critical: 0, emerging: 0 };
     const issues = await ctx.db
       .query("issues")
@@ -370,8 +445,10 @@ export const getNavBadges = query({
 export const getIssueDetail = query({
   args: { issueId: v.id("issues") },
   handler: async (ctx, args) => {
+    const company = await myCompanyDoc(ctx as any);
     const issue = await ctx.db.get(args.issueId);
-    if (!issue) return null;
+    // tenant isolation: never render another company's issue
+    if (!issue || !company || issue.company !== company._id) return null;
     const [evidence, signals, investigations, reports] = await Promise.all([
       ctx.db
         .query("evidence")
@@ -400,7 +477,7 @@ export const getIssueDetail = query({
 export const listReports = query({
   args: {},
   handler: async (ctx) => {
-    const company = await ctx.db.query("companies").first();
+    const company = await myCompanyDoc(ctx as any);
     if (!company) return [];
     return await ctx.db
       .query("reports")
@@ -412,20 +489,28 @@ export const listReports = query({
 
 export const listActivity = query({
   args: {},
-  handler: async (ctx) =>
-    await ctx.db
+  handler: async (ctx) => {
+    const company = await myCompanyDoc(ctx as any);
+    if (!company) return [];
+    return await ctx.db
       .query("agentTasks")
-      .withIndex("by_started")
+      .withIndex("by_company", (q) => q.eq("company", company._id))
       .order("desc")
-      .take(40),
+      .take(40);
+  },
 });
 
 export const listChat = query({
   args: {},
-  handler: async (ctx) =>
-    await ctx.db
+  handler: async (ctx) => {
+    const company = await myCompanyDoc(ctx as any);
+    if (!company) return [];
+    const rows = await ctx.db
       .query("chatMessages")
       .withIndex("by_time")
       .order("asc")
-      .collect(),
+      .collect();
+    // legacy rows (pre-multi-tenant) belong to the demo workspace
+    return rows.filter((m: any) => m.company === company._id || m.company === undefined);
+  },
 });

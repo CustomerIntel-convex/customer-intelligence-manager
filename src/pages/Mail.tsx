@@ -99,6 +99,8 @@ export default function Mail() {
   const inbox = useQuery(api.email.getAgentInbox, {});
   const reports = useQuery(api.queries.listReports, {});
   const company = useQuery(api.queries.getCompany, {});
+  const ws = useQuery(api.tenant.myWorkspace, {});
+  const isTenant = ws?.isDemo === false;
 
   // default filter = the currently active scenario
   const activeScenario = company?.scenario ?? "acme";
@@ -135,7 +137,10 @@ export default function Mail() {
     counts[s] = (counts[s] ?? 0) + 1;
   }
 
-  const tabs = ["all", "marlow", "starbucks", "acme", "firecrawl", "agentmail", "archived"];
+  // scenario tabs are demo-workspace vocabulary; tenants just see everything
+  const tabs = isTenant
+    ? ["all"]
+    : ["all", "marlow", "starbucks", "acme", "firecrawl", "agentmail", "archived"];
 
   return (
     <div className="space-y-5">
@@ -189,11 +194,19 @@ export default function Mail() {
           </KickerHead>
           <div>
             {filtered.length === 0 ? (
-              <EmptyState
-                glyph="✉"
-                title="No mail for this product"
-                hint="Run the scenario's email step, or pick another filter. New mail is tagged with the active product automatically."
-              />
+              isTenant && !inbox.inbox ? (
+                <EmptyState
+                  glyph="✉"
+                  title="Email ingest not connected"
+                  hint="This workspace listens to the web. Connecting a dedicated agent inbox (your support@ or hello@ address) brings customer email into the same pipeline — shown live in the demo workspace."
+                />
+              ) : (
+                <EmptyState
+                  glyph="✉"
+                  title="No mail for this product"
+                  hint="Run the scenario's email step, or pick another filter. New mail is tagged with the active product automatically."
+                />
+              )
             ) : (
               filtered.map((m) => <MessageRow key={m.messageId} m={m} />)
             )}

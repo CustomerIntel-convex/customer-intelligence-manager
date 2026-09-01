@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4.1, gpt-4o-mini
 - **Started:** 2026-08-29T19:00:00Z
-- **Last updated:** 2026-08-31T21:59:43Z
+- **Last updated:** 2026-09-01T11:12:55Z
 
 ## Log
 
@@ -112,3 +112,17 @@ page rebuilt as a front page with an SVG radar brand mark; dashboard, issue deta
 mail, chat and demo panels all moved onto the new primitives. Verified on the live
 deployment after two rounds of screenshot critique (fixed a doubled baseline under the
 signal-volume chart, flat-trend label rendering, and low-contrast microcopy).
+
+### 2026-09-01 - working tree
+Multi-tenant workspaces on Convex Auth: signing up creates an isolated company
+(members table links auth subject → company), every dashboard query resolves the
+caller's company, and issue detail enforces ownership. The demo login still lands
+on the seeded workspace, untouched. Landing page gained a sign-up path; onboarding
+configures sources + watch rules for any named product and opens with a live
+research burst. Re-enabled the 30-minute monitor cron across listening companies
+with a shared Firecrawl credit floor and per-company source cap
+(`convex/lib/tenant.ts`, `convex/tenant.ts`, `convex/schema.ts`, `convex/agent.ts`,
+`convex/queries.ts`). Verified live: a fresh account watching a real SaaS product
+clustered its first web complaints into issues within a minute, with no data
+crossing between workspaces. Convex features: auth, per-user data isolation,
+compound indexes, scheduled functions, crons.

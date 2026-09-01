@@ -34,13 +34,28 @@ function bareAddress(from: string): string {
 export const pollInbound = internalAction({
   args: {},
   handler: async (ctx) => {
-    const company = (await ctx.runQuery(internal.queries.getCompanyInternal, {})) as any;
-    if (!company?.agentInbox) return { polled: 0, processed: 0 };
+    const companies = (await ctx.runQuery(
+      internal.queries.inboxCompaniesInternal,
+      {}
+    )) as any[];
+    let polled = 0;
+    let processed = 0;
+    for (const company of companies) {
+      const r = await pollOneInbox(ctx, company);
+      polled += r.polled;
+      processed += r.processed;
+    }
+    return { polled, processed };
+  },
+});
 
-    const messages = await agentmailApi.listMessages(company.agentInbox, 30);
-    const inbound = messages.filter(
-      (m) => bareAddress(m.from) !== company.agentInbox.toLowerCase()
-    );
+async function pollOneInbox(ctx: any, company: any) {
+  if (!company?.agentInbox) return { polled: 0, processed: 0 };
+
+  const messages = await agentmailApi.listMessages(company.agentInbox, 30);
+  const inbound = messages.filter(
+    (m) => bareAddress(m.from) !== company.agentInbox.toLowerCase()
+  );
 
     // emailRouting is the dedupe ledger used by the webhook path too
     const known = new Set(
@@ -59,9 +74,8 @@ export const pollInbound = internalAction({
       });
       processed++;
     }
-    return { polled: inbound.length, processed };
-  },
-});
+  return { polled: inbound.length, processed };
+}
 
 /** Manual trigger for demos: check the agent's inbox right now. */
 export const pollNow = mutation({
@@ -78,7 +92,9 @@ export const pollNow = mutation({
 export const adoptExistingMail = internalAction({
   args: {},
   handler: async (ctx) => {
-    const company = (await ctx.runQuery(internal.queries.getCompanyInternal, {})) as any;
+    const company = (await ctx.runQuery(internal.queries.getCompanyInternal, {
+      // adopt-as-seen only applies to the demo workspace's mail
+    })) as any;
     if (!company?.agentInbox) return { adopted: 0 };
     const messages = await agentmailApi.listMessages(company.agentInbox, 100);
     const inbound = messages.filter(
