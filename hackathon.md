@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4.1, gpt-4o-mini
 - **Started:** 2026-08-29T19:00:00Z
-- **Last updated:** 2026-09-01T11:12:55Z
+- **Last updated:** 2026-09-01T21:52:25Z
 
 ## Log
 
@@ -126,3 +126,14 @@ with a shared Firecrawl credit floor and per-company source cap
 clustered its first web complaints into issues within a minute, with no data
 crossing between workspaces. Convex features: auth, per-user data isolation,
 compound indexes, scheduled functions, crons.
+
+### 2026-09-01 - working tree
+Credit-burn postmortem and fix. The re-enabled 30-minute monitor cycle drained the
+shared Firecrawl pool (~959 credits in a day): every monitoring search scraped its
+results to markdown (~1 credit per page), and the budget floor compared against a
+cached balance that only refreshed on manual toggles, so it never tripped. Now each
+cycle refreshes the real balance first (free endpoint), pauses paid fetches below a
+150-credit floor, and monitoring/sweep searches run light — titles and snippets
+only, ~1 credit per call — while investigations keep full markdown scraping for
+evidence (`convex/lib/firecrawl.ts`, `convex/agent.ts`, `convex/research.ts`).
+Convex features: actions, crons, internal actions.

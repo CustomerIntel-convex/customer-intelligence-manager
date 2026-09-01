@@ -1,4 +1,4 @@
-import { internalQuery } from "./_generated/server";
+import { internalQuery, query } from "./_generated/server";
 
 // Temporary diagnostics.
 export const lastReply = internalQuery({

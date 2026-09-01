@@ -60,6 +60,10 @@ async function call<T>(path: string, body: unknown, timeoutMs = 45_000): Promise
   }
 }
 
+/**
+ * Full search: scrapes every result to markdown (~1 credit per page on top
+ * of the search). Only for investigations, where evidence text matters.
+ */
 export async function search(query: string, limit = 6): Promise<SearchHit[]> {
   const data = await call<{ web?: SearchHit[] }>(
     "/search",
@@ -74,17 +78,36 @@ export async function search(query: string, limit = 6): Promise<SearchHit[]> {
   }));
 }
 
+/**
+ * Light search: titles + snippets only, no scraping — ~1 credit instead of
+ * ~1-per-result. This is what monitoring and research sweeps use; the keyword
+ * pre-filter and classifier only ever see title + description anyway.
+ */
+export async function searchLight(query: string, limit = 5): Promise<SearchHit[]> {
+  const data = await call<{ web?: SearchHit[] }>("/search", { query, limit }, 60_000);
+  return (data?.web ?? []).map((h) => ({
+    title: h.title ?? "(untitled)",
+    url: h.url,
+    description: h.description ?? "",
+  }));
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Search with one retry after a real backoff when rate limited. */
-export async function searchWithBackoff(query: string, limit = 4): Promise<SearchHit[]> {
+export async function searchWithBackoff(
+  query: string,
+  limit = 4,
+  light = false
+): Promise<SearchHit[]> {
+  const run = () => (light ? searchLight(query, limit) : search(query, limit));
   try {
-    return await search(query, limit);
+    return await run();
   } catch (e: any) {
     if (String(e?.message).includes("FIRECRAWL_RATE_LIMITED")) {
       await sleep(25_000);
       try {
-        return await search(query, limit);
+        return await run();
       } catch {
         return [];
       }

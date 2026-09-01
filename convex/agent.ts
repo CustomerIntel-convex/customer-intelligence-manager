@@ -61,15 +61,14 @@ async function fetchHNItems(query: string, limit = 25): Promise<FetchedItem[]> {
 async function fetchSearchItems(
   query: string,
   sourceName: string,
-  limit = 8
+  limit = 5
 ): Promise<FetchedItem[]> {
-  const hits = await firecrawl.search(query, limit);
+  // monitoring never needs page content — light search, ~1 credit per call
+  const hits = await firecrawl.searchLight(query, limit);
   return hits.map((h) => ({
     externalId: `web:${h.url}`,
     title: h.title,
-    content: [h.title, h.description, (h.markdown ?? "").slice(0, 800)]
-      .filter(Boolean)
-      .join("\n\n"),
+    content: [h.title, h.description].filter(Boolean).join("\n\n"),
     url: h.url,
     occurredAt: now(),
     source: sourceName,
@@ -107,6 +106,13 @@ const MAX_SOURCES_PER_CYCLE = 3;
 export const runMonitorCycle = internalAction({
   args: { company: v.optional(v.id("companies")) },
   handler: async (ctx, args) => {
+    // refresh the real balance first (free endpoint) so the floor never
+    // decides on a stale cached number — that's how the pool got drained
+    try {
+      await ctx.runAction(internal.settings.refreshCredits, {});
+    } catch {
+      // non-fatal: fall back to the cached balance
+    }
     const companies = args.company
       ? ([await ctx.runQuery(internal.queries.getCompanyInternal, { company: args.company })].filter(Boolean) as any[])
       : ((await ctx.runQuery(internal.queries.listeningCompaniesInternal, {})) as any[]);

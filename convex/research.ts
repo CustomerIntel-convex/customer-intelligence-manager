@@ -232,7 +232,8 @@ export const sweep = internalAction({
     const queryStr = `${company.product} ${angle}`;
     let hits: any[] = [];
     if (webOn) {
-      hits = await firecrawl.searchWithBackoff(queryStr, 4);
+      // light search: the sweep classifies on title + description only
+      hits = await firecrawl.searchWithBackoff(queryStr, 4, true);
     }
 
     await ctx.runMutation(internal.state.logTask, {
