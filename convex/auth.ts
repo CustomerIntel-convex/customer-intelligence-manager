@@ -1,4 +1,5 @@
 import { convexAuth } from "@convex-dev/auth/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { Password } from "@convex-dev/auth/providers/Password";
 import { query } from "./_generated/server";
 
@@ -12,9 +13,11 @@ export const currentUser = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return null;
+    const userId = await getAuthUserId(ctx);
+    const user = userId ? await ctx.db.get(userId) : null;
     return {
-      email: (identity.email ?? identity.subject).slice(0, 40),
-      name: (identity.name as string | undefined) ?? "Team",
+      email: ((user as any)?.email ?? identity.email ?? "signed in").slice(0, 40),
+      name: ((user as any)?.name ?? identity.name ?? "Team") as string,
     };
   },
 });

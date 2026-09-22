@@ -18,6 +18,7 @@ import { myCompanyDoc, requireMyCompanyDoc } from "./lib/tenant";
 // Sweep cadence: one search every ~14s keeps a 2-minute burst (~8 sweeps)
 // comfortably under Firecrawl's per-minute rate cap.
 const SWEEP_GAP_MS = 14_000;
+const RESEARCH_CREDIT_FLOOR = 150;
 
 // Fallback when a company has no watch rules yet.
 const FALLBACK_ANGLES = ["complaints OR issues", "vs alternatives", "outage OR status"];
@@ -31,6 +32,12 @@ const RULE_ANGLE: [RegExp, string][] = [
   [/churn|cancel|leav|downgrade/i, "cancel OR switch"],
   [/outage|reliab|status/i, "outage OR status"],
 ];
+
+function paidResearchAvailable(company: any): boolean {
+  const enabled = company.webResearchEnabled ?? firecrawl.enabled();
+  const credits = company.webResearchCredits;
+  return enabled && (credits == null || credits > RESEARCH_CREDIT_FLOOR);
+}
 
 /**
  * Full-spectrum research: derive the burst's search angles from the company's
@@ -198,6 +205,8 @@ export const getStatus = query({
       itemsSeen: s?.itemsSeen ?? 0,
       signalsFound: s?.signalsFound ?? 0,
       webResearchEnabled: company?.webResearchEnabled ?? true,
+      webResearchAvailable: company ? paidResearchAvailable(company) : false,
+      webResearchCredits: company?.webResearchCredits ?? null,
     };
   },
 });
@@ -215,7 +224,7 @@ export const sweep = internalAction({
       return;
     }
     const iteration = s.iterations + 1;
-    const webOn = company.webResearchEnabled ?? firecrawl.enabled();
+    const webOn = paidResearchAvailable(company);
 
     // 1) sweep one configured source per iteration (rotate through them)
     const sources = (await ctx.runQuery(internal.queries.listSourcesInternal, {

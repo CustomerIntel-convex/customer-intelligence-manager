@@ -82,6 +82,7 @@ function LiveResearchCard() {
   const progress = status.running ? Math.min(100, ((total - remaining) / total) * 100) : 0;
   const mm = Math.floor(remaining / 60000);
   const ss = Math.floor((remaining % 60000) / 1000);
+  const paidResearchAvailable = status.webResearchAvailable;
 
   return (
     <div className={`ruled pt-4 ${status.running ? "running-sweep" : ""}`}>
@@ -100,8 +101,12 @@ function LiveResearchCard() {
       <div className="flex items-center justify-between gap-3">
         <p className="max-w-[200px] text-[11px] leading-relaxed text-zinc-500">
           {status.running
-            ? "Sweeping sources + searching the live web on the watched product."
-            : "Run ~2 minutes of visible web research on the watched product."}
+            ? paidResearchAvailable
+              ? "Sweeping sources + searching the live web on the watched product."
+              : "Sweeping free sources; paid web search is paused by the credit floor."
+            : paidResearchAvailable
+              ? "Run ~2 minutes of visible web research on the watched product."
+              : "Run a free-source sweep now; paid web search resumes after credits are topped up."}
         </p>
         {status.running ? (
           <Button
@@ -168,9 +173,11 @@ function LiveResearchCard() {
         ))}
       </div>
 
-      {!status.webResearchEnabled && (
+      {!paidResearchAvailable && (
         <p className="mt-2.5 text-[10px] leading-relaxed text-amber-400/80">
-          Web research is paused — enable it above or sweeps will only use free sources.
+          {status.webResearchEnabled
+            ? "Paid web research is budget-paused at 150 credits; free sources keep running."
+            : "Web research is paused — enable it above or sweeps will only use free sources."}
         </p>
       )}
     </div>
@@ -183,6 +190,7 @@ function WebResearchCard() {
 
   const on = status?.enabled ?? false;
   const credits = status?.credits;
+  const budgetPaused = on && credits != null && credits <= 150;
 
   return (
     <div className="ruled pt-4">
@@ -191,11 +199,19 @@ function WebResearchCard() {
         <div className="flex items-center gap-2.5">
           <span
             className={`flex h-2 w-2 rounded-full ${
-              on ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]" : "bg-zinc-600"
+              budgetPaused
+                ? "bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.55)]"
+                : on
+                  ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]"
+                  : "bg-zinc-600"
             }`}
           />
-          <span className={`text-[12.5px] font-medium ${on ? "text-emerald-300" : "text-zinc-400"}`}>
-            {on ? "Enabled" : "Paused"}
+          <span
+            className={`text-[12.5px] font-medium ${
+              budgetPaused ? "text-amber-300" : on ? "text-emerald-300" : "text-zinc-400"
+            }`}
+          >
+            {budgetPaused ? "Budget paused" : on ? "Enabled" : "Paused"}
           </span>
         </div>
         <button
@@ -229,7 +245,9 @@ function WebResearchCard() {
         </span>
       </div>
       <p className="mt-2.5 border-t border-white/[0.06] pt-2.5 text-[10.5px] leading-relaxed text-zinc-600">
-        {on
+        {budgetPaused
+          ? "Paid searches resume automatically above the 150-credit safety floor. Free sources keep running."
+          : on
           ? "Investigations search the live web via Firecrawl. Monitor cycles also query paid sources."
           : "Investigations complete from stored email & discussion evidence and note the pause. Free HN monitoring keeps running."}
       </p>

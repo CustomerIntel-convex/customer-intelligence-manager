@@ -12,7 +12,7 @@
 - **Auth:** Convex Auth
 - **AI models:** gpt-4.1, gpt-4o-mini
 - **Started:** 2026-08-29T19:00:00Z
-- **Last updated:** 2026-09-22T10:50:22Z
+- **Last updated:** 2026-09-22T11:12:41Z
 
 ## Log
 
@@ -150,3 +150,14 @@ the submitted walkthrough target to under three minutes (`convex/demo.ts`,
 `src/pages/DemoPanel.tsx`, `src/pages/Chat.tsx`, `DEMO.md`). Verified with a clean
 TypeScript production build and deterministic authorization scan. Convex features:
 auth, indexes, internal actions, internal mutations, scheduled functions.
+
+### 2026-09-22 - production
+Deployed the hardened backend and rebuilt frontend, then exercised the judge path on
+the live site. Repaired a mismatched production JWT/JWKS key pair, corrected Convex
+Auth subject parsing so authenticated users resolve to their workspace, and verified
+the Marlow morning brief, issues ledger, demo runner and product-aware chat after a
+fresh one-click sign-in. Added an explicit Firecrawl credit-floor state so paid
+research pauses truthfully while free sources continue instead of presenting an
+empty or wasteful research run (`convex/auth.ts`, `convex/lib/tenant.ts`,
+`convex/research.ts`, `src/pages/DemoPanel.tsx`). Convex features: auth, queries,
+mutations, scheduled functions, realtime queries.
