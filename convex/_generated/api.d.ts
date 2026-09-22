@@ -23,6 +23,7 @@ import type * as lib_openai from "../lib/openai.js";
 import type * as lib_scenarios from "../lib/scenarios.js";
 import type * as lib_tenant from "../lib/tenant.js";
 import type * as lib_util from "../lib/util.js";
+import type * as model_auth from "../model/auth.js";
 import type * as monitor from "../monitor.js";
 import type * as queries from "../queries.js";
 import type * as research from "../research.js";
@@ -53,6 +54,7 @@ declare const fullApi: ApiFromModules<{
   "lib/scenarios": typeof lib_scenarios;
   "lib/tenant": typeof lib_tenant;
   "lib/util": typeof lib_util;
+  "model/auth": typeof model_auth;
   monitor: typeof monitor;
   queries: typeof queries;
   research: typeof research;

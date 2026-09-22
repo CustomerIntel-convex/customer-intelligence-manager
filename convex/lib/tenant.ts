@@ -9,6 +9,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { ConvexError } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { requireIdentity } from "../model/auth";
 
 export const DEMO_EMAIL = "demo@customer-intel.app";
@@ -17,8 +18,8 @@ type Ctx = { db: any; auth?: any };
 
 /** Convex Auth puts the user id in the identity subject. */
 export async function currentUserId(ctx: Ctx): Promise<string | null> {
-  const identity = await ctx.auth?.getUserIdentity?.();
-  return identity?.subject ?? null;
+  if (!ctx.auth) return null;
+  return (await getAuthUserId(ctx as any)) ?? null;
 }
 
 /** The demo workspace: flagged with isDemo, else the oldest company. */

@@ -25,7 +25,8 @@ export async function requireOwner<T extends { ownerId: string }>(
 ): Promise<T> {
   if (!doc) throw new ConvexError({ code: "NOT_FOUND", status: 404 });
   const identity = await requireIdentity(ctx);
-  if (doc.ownerId !== identity.subject) {
+  const [userId] = identity.subject.split("|");
+  if (doc.ownerId !== userId) {
     throw new ConvexError({ code: "FORBIDDEN", status: 403 });
   }
   return doc;
