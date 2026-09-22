@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ConvexProvider, useQuery } from "convex/react";
+import { ConvexProvider, useConvexAuth, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { BrowserRouter, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { convex, api } from "./lib/convex";
@@ -170,14 +170,10 @@ function Rail() {
 }
 
 function SignOut() {
+  const { signOut } = useAuthActions();
   return (
     <button
-      onClick={() => {
-        Object.keys(localStorage)
-          .filter((k) => k.includes("convexAuth"))
-          .forEach((k) => localStorage.removeItem(k));
-        window.location.reload();
-      }}
+      onClick={() => void signOut()}
       className="shrink-0 font-mono text-[8.5px] uppercase tracking-[0.16em] text-[#6f695c] transition-colors hover:text-[#ece5d5]"
     >
       exit
@@ -206,9 +202,6 @@ function Shell() {
   );
 }
 
-const JWT_KEY =
-  "__convexAuthJWT_" + (import.meta as any).env.VITE_CONVEX_URL.replace(/[^a-z0-9]/gi, "");
-
 /** Signed in — but does this account have a workspace yet? */
 function WorkspaceGate() {
   const ws = useQuery(api.tenant.myWorkspace, {});
@@ -226,17 +219,17 @@ function WorkspaceGate() {
 }
 
 function AuthGate() {
-  const [session, setSession] = useState<boolean>(() => !!localStorage.getItem(JWT_KEY));
-  useEffect(() => {
-    const check = () => setSession(!!localStorage.getItem(JWT_KEY));
-    const t = setInterval(check, 500);
-    window.addEventListener("storage", check);
-    return () => {
-      clearInterval(t);
-      window.removeEventListener("storage", check);
-    };
-  }, []);
-  if (!session) return <Landing />;
+  const { isAuthenticated, isLoading } = useConvexAuth();
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#6f695c]">
+          opening the brief…
+        </span>
+      </div>
+    );
+  }
+  if (!isAuthenticated) return <Landing />;
   return (
     <BrowserRouter>
       <WorkspaceGate />

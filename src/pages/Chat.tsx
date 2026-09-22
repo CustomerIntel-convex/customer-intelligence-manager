@@ -3,20 +3,21 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../lib/convex";
 import { Button } from "../components/ui";
 
-const SUGGESTIONS = [
-  "What are people complaining about Firecrawl today?",
-  "Which issue is most urgent?",
-  "Investigate the checkout issue.",
-  "Are competitors seeing the same thing?",
-  "Email me the findings.",
-];
-
 export default function Chat() {
   const messages = useQuery(api.queries.listChat, {});
+  const company = useQuery(api.queries.getCompany, {});
   const send = useMutation(api.chat.send);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const product = company?.product ?? "our product";
+  const suggestions = [
+    `What are customers saying about ${product} today?`,
+    "Which issue is most urgent?",
+    "Investigate the top issue.",
+    "Are competitors seeing the same thing?",
+    "Email me the findings.",
+  ];
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -101,7 +102,7 @@ export default function Chat() {
         {/* composer */}
         <div className="border-t border-white/[0.06] bg-black/20 p-4">
           <div className="mb-2.5 flex flex-wrap gap-1.5">
-            {SUGGESTIONS.map((s) => (
+            {suggestions.map((s) => (
               <button
                 key={s}
                 onClick={() => submit(s)}

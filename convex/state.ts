@@ -335,7 +335,7 @@ export const getSetupStateInternal = internalMutation({
   handler: async (ctx) => {
     const flagged = await ctx.db
       .query("companies")
-      .filter((q: any) => q.eq(q.field("isDemo"), true))
+      .withIndex("by_isDemo", (q: any) => q.eq("isDemo", true))
       .first();
     const company = flagged ?? (await ctx.db.query("companies").first());
     if (!company) return { companyId: null, ruleCount: 0, sourceCount: 0 };
@@ -442,7 +442,7 @@ export const configureScenarioInternal = internalMutation({
     } else {
       const flagged = await ctx.db
         .query("companies")
-        .filter((q: any) => q.eq(q.field("isDemo"), true))
+        .withIndex("by_isDemo", (q: any) => q.eq("isDemo", true))
         .first();
       company = flagged ?? (await ctx.db.query("companies").first());
     }

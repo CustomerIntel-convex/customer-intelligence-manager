@@ -31,16 +31,16 @@ FOLLOW UP  employees reply on the email thread; the agent investigates the
 | **OpenAI** | Classification, clustering, historical comparison, prioritization inputs, investigation planning, evidence extraction, report & reply writing (JSON-schema structured outputs) |
 | **AgentMail** | The agent's real business inbox (`customer.intelligence@agentmail.to`): inbound customer email → signals; employee replies → focused investigations + evidence-backed answers; outbound internal reports |
 
-## The demo (Acme AI)
+## The demo (The Marlow House)
 
-A fictional company with a pre-loaded memory: a resolved desktop checkout-latency incident (Aug 12–18, payment-provider timeout). During the demo:
+A fictional 12-room boutique hotel with a pre-loaded memory: resolved booking-confirmation failures plus stable breakfast and parking topics. During the demo:
 
 1. A **real customer email** arrives → classified → issue opened
 2. 20 public-discussion signals ramp in → clustered → trend ↑6×
-3. The priority threshold crosses → the agent **investigates on its own** with real web research (Razorpay, Stripe, Shopify community threads as evidence)
-4. It recognizes the relationship to the August incident — *different segment this time*
-5. It emails an internal report to Maria
-6. Maria replies twice ("mobile only?", "competitors?") → focused investigations → evidence-backed replies on the thread
+3. The priority threshold crosses → the agent **investigates on its own** with real web research about hotel deposit holds and refund delays
+4. It recognizes the relationship to the August booking incident — *a different guest segment this time*
+5. It emails an internal report to the hotel owner
+6. The owner replies with focused questions → fresh investigations → evidence-backed answers on the thread
 
 See **[DEMO.md](./DEMO.md)** for the full 3-minute walkthrough with speaker notes.
 
@@ -56,7 +56,7 @@ Env vars (in Convex): `OPENAI_API_KEY`, `FIRECRAWL_API_KEY`, `AGENTMAIL_API_KEY`
 
 First-time setup: open the dashboard → **Demo** → *Provision*. That creates the three real AgentMail inboxes (agent, employee, customer), the company, watch rules, and monitored sources.
 
-**Cost control:** nothing calls Firecrawl on a schedule. The inbound-mail poll (cron, 2 min) is pure AgentMail REST; investigation searches run only when an investigation triggers (demo steps or threshold), max 2 queries each — and only when web research is toggled on in the dashboard. The **Live research burst** button (Demo panel) runs a bounded, operator-controllable 2-minute sweep that makes Firecrawl usage visible on demand; a deterministic keyword pre-filter keeps fuzzy search noise away from the LLM.
+**Cost control:** the 30-minute monitor cron refreshes the shared Firecrawl balance before paid searches, pauses them below the configured credit floor, and caps each company to three sources per cycle. Investigations use at most two searches. The **Live research burst** button runs a bounded, operator-controllable two-minute sweep; a deterministic keyword pre-filter keeps fuzzy search noise away from the LLM.
 
 **Deployed:** dashboard at **https://majestic-orca-275.convex.site** (official Convex static hosting — dashboard, AgentMail webhook and health route on one origin). A legacy Vercel deployment is kept as a secondary.
 
@@ -73,7 +73,7 @@ convex/
   lib/analysis.ts     every LLM interaction (strict JSON schemas)
   lib/firecrawl.ts    search/scrape + content hashing
   demo.ts             deterministic scenario steps (each runs the real pipeline)
-  cron.ts             5-min monitor cycle + 2-min inbound-mail poll
+  crons.ts            30-min monitor cycle + 2-min inbound-mail poll
 src/
   pages/              Overview, Issues, IssueDetail, Mail, Chat, DemoPanel
 ```

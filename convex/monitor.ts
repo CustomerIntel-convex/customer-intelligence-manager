@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import * as agentmailApi from "./lib/agentmailApi";
 import { now } from "./lib/util";
+import { requireMyCompanyDoc } from "./lib/tenant";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Polling fallback for inbound mail. The AgentMail webhook is the primary
@@ -49,6 +50,17 @@ export const pollInbound = internalAction({
   },
 });
 
+export const pollCompanyInbound = internalAction({
+  args: { company: v.id("companies") },
+  handler: async (ctx, args): Promise<{ polled: number; processed: number }> => {
+    const company: any = await ctx.runQuery(internal.queries.getCompanyInternal, {
+      company: args.company,
+    });
+    if (!company) return { polled: 0, processed: 0 };
+    return await pollOneInbox(ctx, company);
+  },
+});
+
 async function pollOneInbox(ctx: any, company: any) {
   if (!company?.agentInbox) return { polled: 0, processed: 0 };
 
@@ -81,7 +93,10 @@ async function pollOneInbox(ctx: any, company: any) {
 export const pollNow = mutation({
   args: {},
   handler: async (ctx) => {
-    await ctx.scheduler.runAfter(0, internal.monitor.pollInbound, {});
+    const company = await requireMyCompanyDoc(ctx as any);
+    await ctx.scheduler.runAfter(0, internal.monitor.pollCompanyInbound, {
+      company: company._id,
+    });
   },
 });
 

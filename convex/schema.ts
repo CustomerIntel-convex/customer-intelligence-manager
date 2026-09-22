@@ -41,8 +41,12 @@ export default defineSchema({
         signalsFound: v.number(),
       })
     ),
+    // Idempotency ledger for the shared interactive demo.
+    demoSteps: v.optional(v.array(v.string())),
     createdAt: v.number(),
-  }),
+  })
+    .index("by_isDemo", ["isDemo"])
+    .index("by_agentInbox", ["agentInbox"]),
 
   // Workspace membership: which authenticated user belongs to which company.
   // One company per user; the demo account is linked lazily to the demo company.

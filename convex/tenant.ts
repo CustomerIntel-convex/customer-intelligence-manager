@@ -1,6 +1,6 @@
-import { query, mutation } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { api } from "./_generated/api";
+import { internal } from "./_generated/api";
 import { now } from "./lib/util";
 import { myCompanyDoc, currentUserId, DEMO_EMAIL } from "./lib/tenant";
 
@@ -102,7 +102,7 @@ export const createWorkspace = mutation({
     }
 
     // opening burst: listen to the web right away so the first screen lives
-    await ctx.scheduler.runAfter(0, api.research.startResearch, {
+    await ctx.scheduler.runAfter(0, internal.research.startResearchForCompany, {
       durationSec: 120,
       company: companyId,
     });
@@ -115,12 +115,12 @@ export const createWorkspace = mutation({
  * seeded workspace as the demo, adopt its legacy chat/activity rows, and link
  * the demo login. Idempotent.
  */
-export const backfillLegacy = mutation({
+export const backfillLegacy = internalMutation({
   args: {},
   handler: async (ctx) => {
     let demo = await ctx.db
       .query("companies")
-      .filter((q: any) => q.eq(q.field("isDemo"), true))
+      .withIndex("by_isDemo", (q: any) => q.eq("isDemo", true))
       .first();
     if (!demo) {
       demo = await ctx.db.query("companies").first();

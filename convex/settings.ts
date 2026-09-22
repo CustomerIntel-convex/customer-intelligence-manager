@@ -2,7 +2,7 @@ import { query, mutation, internalAction, internalMutation } from "./_generated/
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { enabled as envEnabled } from "./lib/firecrawl";
-import { myCompanyDoc } from "./lib/tenant";
+import { myCompanyDoc, requireMyCompanyDoc } from "./lib/tenant";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Web-research (Firecrawl) control — toggleable from the dashboard.
@@ -25,8 +25,7 @@ export const getWebResearch = query({
 export const setWebResearch = mutation({
   args: { enabled: v.boolean() },
   handler: async (ctx, args) => {
-    const company = await myCompanyDoc(ctx as any);
-    if (!company) throw new Error("Run setup first");
+    const company = await requireMyCompanyDoc(ctx as any);
     await ctx.db.patch(company._id, { webResearchEnabled: args.enabled });
     // refresh the credit balance shown next to the toggle (free endpoint)
     await ctx.scheduler.runAfter(0, internal.settings.refreshCredits, {});

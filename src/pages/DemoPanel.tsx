@@ -6,11 +6,20 @@ import { Kicker, LiveDot, Button } from "../components/ui";
 /** Per-scenario UI copy (data lives in convex/lib/scenarios.ts). */
 const SCENARIO_COPY: Record<
   string,
-  { label: string; product: string; step2: string; step3: string; q1: string; q2: string }
+  {
+    label: string;
+    product: string;
+    memory: string;
+    step2: string;
+    step3: string;
+    q1: string;
+    q2: string;
+  }
 > = {
   marlow: {
     label: "The Marlow House",
     product: "Boutique hotel (everyday business)",
+    memory: "Historical context: booking-confirmation failures resolved in August + two stable guest topics. This is what the agent remembers later.",
     step2: "A guest emails: her $150 deposit still hasn't been released three weeks after checkout. The webhook classifies it and a signal is created.",
     step3: "20 signals arrive: a real deposit-refund complaint pattern. The agent clusters them and auto-investigates with live web research.",
     q1: 'The owner asks: "Is this only affecting guests who paid by card at checkout?"',
@@ -19,6 +28,7 @@ const SCENARIO_COPY: Record<
   starbucks: {
     label: "Starbucks",
     product: "Starbucks (everyday consumer brand)",
+    memory: "Historical context: morning-rush mobile-order waits resolved in August + two stable customer topics.",
     step2: "A daily customer emails about mobile-order waits being broken again. The webhook classifies it and a signal is created.",
     step3: "20 signals arrive: a real complaints pattern. The agent clusters them and auto-investigates with live web research on the brand.",
     q1: 'Maria asks: "Is this only affecting morning-rush stores?"',
@@ -27,6 +37,7 @@ const SCENARIO_COPY: Record<
   acme: {
     label: "Acme AI",
     product: "Acme Assistant (fictional)",
+    memory: "Historical context: desktop checkout latency resolved in August + two stable customer topics.",
     step2: "Dana sends a real email to the agent's inbox about slow mobile checkout. The webhook classifies it and a signal is created.",
     step3: "20 scenario signals arrive over ~20s. Watch the agent cluster them, watch the issue grow, and auto-trigger an investigation.",
     q1: 'Maria asks: "Is this only affecting mobile users?"',
@@ -35,6 +46,7 @@ const SCENARIO_COPY: Record<
   firecrawl: {
     label: "Firecrawl",
     product: "Firecrawl API (real product)",
+    memory: "Historical context: scrape timeouts on JavaScript-heavy sites resolved in August + two stable customer topics.",
     step2: "A high-volume customer emails about 429 rate limits breaking their batch jobs. The webhook classifies it and a signal is created.",
     step3: "20 signals arrive: a real rate-limit complaint pattern. The agent clusters them and auto-investigates with live web research on the product name.",
     q1: 'Maria asks: "Is this only affecting high-volume API users?"',
@@ -43,6 +55,7 @@ const SCENARIO_COPY: Record<
   agentmail: {
     label: "AgentMail",
     product: "AgentMail API (real product)",
+    memory: "Historical context: outbound send-queue delays resolved in August + two stable customer topics.",
     step2: "A customer emails about message.received webhooks arriving 10+ minutes late. The webhook classifies it and a signal is created.",
     step3: "20 signals arrive: delayed-webhook complaints. The agent clusters them and auto-investigates with live web research on the product name.",
     q1: 'Maria asks: "Is this only affecting webhook users?"',
@@ -271,7 +284,7 @@ function Step({
               setResult(`✖ ${e.message.slice(0, 120)}`);
             }
           }}
-          disabled={!!busy}
+          disabled={!!busy || !!done}
           className="text-left text-[13px] font-medium text-zinc-200 transition hover:text-white disabled:opacity-40"
         >
           {loading ? (
@@ -326,9 +339,20 @@ export default function DemoPanel() {
   const rampedIssue = issues?.find((i: any) =>
     ["critical", "confirmed", "emerging"].includes(i.status)
   );
-  const reportSent = (reports?.length ?? 0) > 0;
+  const stepDone = (step: string) => company?.demoSteps?.includes(step) ?? false;
+  const historyLoaded = stepDone("history") || issues?.some((i: any) => i.status === "resolved");
+  const reportSent = reports?.some((r: any) => (r.scenario ?? "acme") === scenario) ?? false;
   const employeeMail =
-    inbox?.messages.filter((m: any) => m.routing?.classification?.startsWith("employee")).length ?? 0;
+    inbox?.messages.filter(
+      (m: any) =>
+        m.routing?.classification?.startsWith("employee") &&
+        (m.routing?.scenario ?? "acme") === scenario
+    ).length ?? 0;
+
+  const questionText = (label: string) =>
+    label.match(/"([^"]+)"\s*$/)?.[1] ?? label.replace(/^[^:]+:\s*/, "").replace(/^"|"$/g, "");
+  const questionStep = (label: string) =>
+    `employee-question:${questionText(label).trim().toLowerCase()}`;
 
   return (
       <div className="space-y-5">
@@ -385,7 +409,7 @@ export default function DemoPanel() {
             <Step
               n={0}
               title="Provision (setup)"
-              desc="Creates the 3 real AgentMail inboxes (agent, Maria, Dana), the company, watch rules and monitored sources. Idempotent."
+              desc="Creates the 3 real AgentMail inboxes (agent, owner, customer), the company, watch rules and monitored sources. Idempotent."
               busy={busy}
               done={!!company?.agentInbox}
               onClick={run("Provision (setup)", () => setup({}))}
@@ -393,8 +417,9 @@ export default function DemoPanel() {
             <Step
               n={1}
               title="Load the agent's memory"
-              desc="Historical context: checkout latency (desktop) resolved Aug 12–18 (payment-provider timeout) + 2 stable topics. This is what it remembers later."
+              desc={copy.memory}
               busy={busy}
+              done={!!historyLoaded}
               onClick={run("Load the agent's memory", () => seedHistory({}))}
             />
             <Step
@@ -402,6 +427,7 @@ export default function DemoPanel() {
               title="A customer email arrives"
               desc={copy.step2}
               busy={busy}
+              done={stepDone("customer-email")}
               onClick={run("A customer email arrives", () => customerEmail({}))}
             />
             <Step
@@ -409,12 +435,13 @@ export default function DemoPanel() {
               title="Public discussion ramps up"
               desc={copy.step3}
               busy={busy}
+              done={stepDone("public-ramp")}
               onClick={run("Public discussion ramps up", () => seedSignals({}))}
             />
             <Step
               n={4}
               title="Investigation & report"
-              desc="Forces an investigation of the top issue (normally fires automatically when the ramp crosses the threshold) and emails the report to Maria."
+              desc="Forces an investigation of the top issue (normally fires automatically when the ramp crosses the threshold) and emails the report to the owner."
               busy={busy}
               done={reportSent}
               onClick={run("Investigation & report", () => investigateNow({}))}
@@ -424,16 +451,16 @@ export default function DemoPanel() {
               title={copy.q1}
               desc="A real reply on the report thread. The agent investigates the question and replies with evidence."
               busy={busy}
-              done={employeeMail >= 1}
-              onClick={run(copy.q1, () => employeeAsk({ question: SCENARIO_COPY[scenario].q1.replace(/^Maria asks: "|"$/g, "") }))}
+              done={stepDone(questionStep(copy.q1)) || employeeMail >= 1}
+              onClick={run(copy.q1, () => employeeAsk({ question: questionText(copy.q1) }))}
             />
             <Step
               n={6}
               title={copy.q2}
               desc="Fresh web research via Firecrawl, correlated with the issue, replied on the thread."
               busy={busy}
-              done={employeeMail >= 2}
-              onClick={run(copy.q2, () => employeeAsk({ question: SCENARIO_COPY[scenario].q2.replace(/^Maria asks: "|"$/g, "") }))}
+              done={stepDone(questionStep(copy.q2)) || employeeMail >= 2}
+              onClick={run(copy.q2, () => employeeAsk({ question: questionText(copy.q2) }))}
             />
             <Step
               n="↺"

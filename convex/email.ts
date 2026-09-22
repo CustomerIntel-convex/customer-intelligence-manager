@@ -1,11 +1,11 @@
-import { internalMutation, internalAction, query, mutation } from "./_generated/server";
+import { internalMutation, internalAction, internalQuery, query } from "./_generated/server";
 import { v } from "convex/values";
 import { components, internal } from "./_generated/api";
 import { AgentMail } from "@agentmail/convex";
 import * as analysis from "./lib/analysis";
 import * as agentmailApi from "./lib/agentmailApi";
 import { clamp, now } from "./lib/util";
-import { companyForInbox, myCompanyDoc } from "./lib/tenant";
+import { companyForInbox, requireMyCompanyDoc } from "./lib/tenant";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AgentMail integration — the agent's business inbox.
@@ -315,7 +315,7 @@ function ts(t: string | number): number {
 
 // ── UI queries ──────────────────────────────────────────────────────────────
 
-export const listInboxMessages = query({
+export const listInboxMessages = internalQuery({
   args: { inboxId: v.string() },
   handler: async (ctx, args) => {
     return await ctx.runQuery(components.agentmail.lib.listInboundMessages, {
@@ -328,8 +328,8 @@ export const listInboxMessages = query({
 export const getAgentInbox = query({
   args: {},
   handler: async (ctx) => {
-    const company = await myCompanyDoc(ctx as any);
-    if (!company?.agentInbox) return { inbox: null, messages: [], routing: [] };
+    const company = await requireMyCompanyDoc(ctx as any);
+    if (!company.agentInbox) return { inbox: null, messages: [], routing: [] };
     const messages = await ctx.runQuery(
       components.agentmail.lib.listInboundMessages,
       { inboxId: company.agentInbox }
@@ -350,22 +350,5 @@ export const getAgentInbox = query({
           routing: routingByMessage.get(m.messageId) ?? null,
         })),
     };
-  },
-});
-
-/** Send an email as the agent (used by the demo runner and chat). */
-export const sendAsAgent = mutation({
-  args: { to: v.string(), subject: v.string(), text: v.string() },
-  handler: async (ctx, args) => {
-    const company = await myCompanyDoc(ctx as any);
-    if (!company?.agentInbox) throw new Error("Company not set up");
-    await ctx.scheduler.runAfter(0, internal.email.sendEmail, {
-      inboxId: company.agentInbox,
-      to: args.to,
-      subject: args.subject,
-      text: args.text,
-      labels: ["intelligence-report"],
-    });
-    return "scheduled";
   },
 });

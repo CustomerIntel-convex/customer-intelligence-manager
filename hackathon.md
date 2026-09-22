@@ -7,12 +7,12 @@
 - **Repo:** https://github.com/CustomerIntel-convex/customer-intelligence-manager
 - **Frontend:** Convex static hosting
 - **Convex deployment:** https://majestic-orca-275.convex.cloud
-- **Components:** @agentmail/convex, @convex-dev/auth, @convex-dev/static-hosting, @convex-dev/workpool
+- **Components:** @agentmail/convex, @convex-dev/static-hosting
 - **Convex features:** schema, tables, indexes, queries, mutations, actions, HTTP actions, crons, scheduled functions, realtime queries, auth
 - **Auth:** Convex Auth
 - **AI models:** gpt-4.1, gpt-4o-mini
 - **Started:** 2026-08-29T19:00:00Z
-- **Last updated:** 2026-09-01T21:52:25Z
+- **Last updated:** 2026-09-22T10:50:22Z
 
 ## Log
 
@@ -137,3 +137,16 @@ cycle refreshes the real balance first (free endpoint), pauses paid fetches belo
 only, ~1 credit per call — while investigations keep full markdown scraping for
 evidence (`convex/lib/firecrawl.ts`, `convex/agent.ts`, `convex/research.ts`).
 Convex features: actions, crons, internal actions.
+
+### 2026-09-22 - working tree
+Submission-day security and demo-readiness pass: removed unauthenticated admin and
+email-relay surfaces, required workspace ownership for research and investigation
+controls, moved trusted cross-workspace operations behind internal functions, and
+added indexed tenant lookups (`convex/model/auth.ts`, `convex/lib/tenant.ts`,
+`convex/chat.ts`, `convex/email.ts`, `convex/research.ts`, `convex/monitor.ts`). Made
+the demo runner retry-safe with a per-workspace step ledger, aligned the interface,
+scenario memory and recording script around the Marlow hotel story, and shortened
+the submitted walkthrough target to under three minutes (`convex/demo.ts`,
+`src/pages/DemoPanel.tsx`, `src/pages/Chat.tsx`, `DEMO.md`). Verified with a clean
+TypeScript production build and deterministic authorization scan. Convex features:
+auth, indexes, internal actions, internal mutations, scheduled functions.

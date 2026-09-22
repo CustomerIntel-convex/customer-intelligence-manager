@@ -3,9 +3,13 @@
 //   • demoCompanyDoc   — the seeded demo workspace (shared, judges' entry)
 //   • myCompanyDoc     — company of the authenticated user (query/mutation ctx)
 //   • companyForInbox  — company owning a given AgentMail inbox id (webhook)
-// Users without a membership row who are not the demo account get null →
-// the client shows onboarding instead of someone else's data.
+// Anonymous callers never inherit the demo workspace. Users without a
+// membership row who are not the demo account get null → the client shows
+// onboarding instead of someone else's data.
 // ─────────────────────────────────────────────────────────────────────────────
+
+import { ConvexError } from "convex/values";
+import { requireIdentity } from "../model/auth";
 
 export const DEMO_EMAIL = "demo@customer-intel.app";
 
@@ -21,7 +25,7 @@ export async function currentUserId(ctx: Ctx): Promise<string | null> {
 export async function demoCompanyDoc(ctx: Ctx) {
   const flagged = await ctx.db
     .query("companies")
-    .filter((q: any) => q.eq(q.field("isDemo"), true))
+    .withIndex("by_isDemo", (q: any) => q.eq("isDemo", true))
     .first();
   if (flagged) return flagged;
   return await ctx.db.query("companies").first();
@@ -35,7 +39,7 @@ export async function demoCompanyDoc(ctx: Ctx) {
  */
 export async function myCompanyDoc(ctx: Ctx) {
   const userId = await currentUserId(ctx);
-  if (!userId) return await demoCompanyDoc(ctx);
+  if (!userId) return null;
   const member = await ctx.db
     .query("members")
     .withIndex("by_userId", (q: any) => q.eq("userId", userId))
@@ -46,10 +50,29 @@ export async function myCompanyDoc(ctx: Ctx) {
   return null;
 }
 
+/** Authenticated caller's workspace, or a safe error before any side effect. */
+export async function requireMyCompanyDoc(ctx: Ctx) {
+  await requireIdentity(ctx as any);
+  const company = await myCompanyDoc(ctx);
+  if (!company) {
+    throw new ConvexError({ code: "WORKSPACE_NOT_FOUND", status: 404 });
+  }
+  return company;
+}
+
+/** Only the authenticated shared demo account may operate the demo runner. */
+export async function requireDemoCompanyDoc(ctx: Ctx) {
+  const company = await requireMyCompanyDoc(ctx);
+  if (!company.isDemo) {
+    throw new ConvexError({ code: "DEMO_ONLY", status: 403 });
+  }
+  return company;
+}
+
 /** Company whose agent inbox received a message (webhook/poll path). */
 export async function companyForInbox(ctx: Ctx, inboxId: string) {
   return await ctx.db
     .query("companies")
-    .filter((q: any) => q.eq(q.field("agentInbox"), inboxId))
+    .withIndex("by_agentInbox", (q: any) => q.eq("agentInbox", inboxId))
     .first();
 }

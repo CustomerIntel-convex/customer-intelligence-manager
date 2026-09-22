@@ -1,9 +1,9 @@
 import { action, mutation, internalMutation, internalAction } from "./_generated/server";
 import { v } from "convex/values";
-import { api, internal } from "./_generated/api";
+import { internal } from "./_generated/api";
 import * as analysis from "./lib/analysis";
 import { now } from "./lib/util";
-import { myCompanyDoc } from "./lib/tenant";
+import { requireMyCompanyDoc } from "./lib/tenant";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Dashboard chat with the agent. Answers come from live Convex state; the chat
@@ -27,8 +27,8 @@ export const send = mutation({
   args: { message: v.string() },
   handler: async (ctx, args) => {
     // mutations can read the authenticated user → tenant scope is enforced here
-    const company = await myCompanyDoc(ctx as any);
-    const companyId = company?._id as any;
+    const company = await requireMyCompanyDoc(ctx as any);
+    const companyId = company._id;
 
     await ctx.db.insert("chatMessages", {
       company: companyId,
@@ -76,13 +76,13 @@ export const sendAgent = internalAction({
     if (result.watchProduct) {
       const product = result.watchProduct.trim().slice(0, 60);
       if (company?.isDemo) {
-        await ctx.runMutation(api.demo.resetDemo, {});
+        await ctx.runMutation(internal.demo.resetDemoInternal, { company: companyId });
       }
       await ctx.runMutation(internal.demo.reconfigureProductInternal, {
         product,
         company: companyId,
       });
-      await ctx.scheduler.runAfter(0, api.research.startResearch, {
+      await ctx.scheduler.runAfter(0, internal.research.startResearchForCompany, {
         durationSec: 120,
         company: companyId,
       });
@@ -95,7 +95,7 @@ export const sendAgent = internalAction({
 
     // side effect: kick off live web research when asked for fresh voice
     if (result.startResearch && !result.watchProduct) {
-      await ctx.scheduler.runAfter(0, api.research.startResearch, {
+      await ctx.scheduler.runAfter(0, internal.research.startResearchForCompany, {
         durationSec: 120,
         company: companyId,
       });
@@ -157,10 +157,12 @@ export const sendAgent = internalAction({
 export const runInvestigationNow = mutation({
   args: { issueId: v.optional(v.id("issues")) },
   handler: async (ctx, args) => {
+    const company = await requireMyCompanyDoc(ctx as any);
     let issueId = args.issueId;
-    if (!issueId) {
-      const company = await myCompanyDoc(ctx as any);
-      if (!company) throw new Error("Company not set up");
+    if (issueId) {
+      const issue = await ctx.db.get(issueId);
+      if (!issue || issue.company !== company._id) throw new Error("Issue not found");
+    } else {
       const issues = await ctx.db
         .query("issues")
         .withIndex("by_company_score", (q) => q.eq("company", company._id))
@@ -182,6 +184,9 @@ export const runInvestigationNow = mutation({
 export const runMonitorNow = mutation({
   args: {},
   handler: async (ctx) => {
-    await ctx.scheduler.runAfter(0, internal.agent.runMonitorCycle, {});
+    const company = await requireMyCompanyDoc(ctx as any);
+    await ctx.scheduler.runAfter(0, internal.agent.runMonitorCycle, {
+      company: company._id,
+    });
   },
 });

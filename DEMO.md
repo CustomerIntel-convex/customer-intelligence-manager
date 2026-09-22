@@ -7,7 +7,7 @@
 
 **Video style:** talk less, click more — let the product move; narrate one line per screen.
 
-**First click of the video:** open the live URL → hit **"Enter the demo workspace"** (one
+**First click of the video:** open the live URL → hit **"See it working live"** (one
 click, Convex Auth) — that IS the opening shot: judges see a real login → real app.
 
 > Everything below runs the **real** pipeline: real emails through AgentMail, real web research through Firecrawl, real analysis through OpenAI, realtime state in Convex. No mocks.
@@ -18,19 +18,20 @@ click, Convex Auth) — that IS the opening shot: judges see a real login → re
 
 > "If you run a hotel, a restaurant, a clinic — your customers are talking right now: reviews, forums, email. Nobody has time to connect all of it. So we hired an employee whose only job is to listen. Meet ours."
 
-## Step 0 — The owner's morning brief + just ask (~60s)
+## Step 0 — The owner's morning brief (~25s)
 
 Stay on **Overview**. This is The Marlow House, a 12-room boutique hotel:
 
 > "This is the screen the owner reads with her morning coffee: complaints clustering, trends, what needs attention — assembled overnight, by itself."
 
-Then open the **Chat** tab and type naturally:
+For a longer cut, optionally open the **Chat** tab and type naturally:
 
 > "Hey — let me know what guests are complaining about today."
 
 > "No canned prompts — the agent reads its live state, and when it needs fresh intel it decides to go get it."
 
-*(The agent answers from what it knows, announces it's kicking off live web research. Switch to **Overview**: watch full-spectrum sweeps — complaints, pricing, amenities, competitors, cancellations — with live result counts.)*
+*(Record this as a separate pickup: the agent answers from what it knows, announces
+it's kicking off live web research, and the Overview shows the live sweep.)*
 
 > "Full spectrum: it researches whatever the business tells it to care about. Change the watch rules and its research changes."
 
@@ -72,7 +73,7 @@ Open the issue from Recent changes.
 
 > "And it reported this to the owner by itself." *(Mail page: the report + its body.)*
 
-## Step 5 — The owner replies (~70s)
+## Step 5 — The owner replies (optional; omit from the submitted cut)
 
 Click the owner's question — **"Is this only affecting guests who paid by card at checkout?"** — a real reply on the report thread.
 
@@ -81,7 +82,7 @@ Click the owner's question — **"Is this only affecting guests who paid by card
 *(After ~1 min, Mail page shows the agent's reply, grounded in the evidence timeline.)*
 
 
-## Step 6 — Competitor research (~70s)
+## Step 6 — Competitor research (optional; omit from the submitted cut)
 
 Click the owner's second question — **"Are other boutique hotels seeing the same deposit complaints?"**
 
@@ -111,20 +112,21 @@ Chat page:
 
 ## Timing budget
 
-| Segment | Active time | Processing (narrate over it) |
-|---|---|---|
-| Memory + email | 30s | ~20s |
-| Ramp → investigation → report | 60s | ~50s (happens live on screen) |
-| Maria Q1 | 15s | ~70s |
-| Maria Q2 | 15s | ~70s |
-| **Total wall clock** | **~2 min talking** | **~3.5 min** |
+| Submitted cut | Target |
+|---|---|
+| Landing + morning brief | 25s |
+| Memory + customer email | 30s |
+| Ramp → autonomous investigation | 55s |
+| Issue evidence + historical context | 40s |
+| Sent report + closing | 25s |
+| **Target runtime** | **2m 55s maximum** |
 
-The processing gaps ARE the demo — the dashboard shows the agent working in realtime. If you need to compress: skip Step 5, or ask the questions while showing the issue page.
+Record the email follow-up and competitor-research steps separately if desired. The submitted cut should end after showing the sent report; do not wait for both reply investigations on camera.
 
 ## Recovery / notes
 
 - Everything is idempotent: **Reset demo data** → re-run steps in order.
 - Inbound email: AgentMail webhook (primary) + 2-minute poll fallback (cron) — both feed the same handler.
 - If a button errors, check Convex dashboard logs (`npx convex dashboard`).
-- **Firecrawl budget:** toggle web research on/off from the **Demo panel → Web research · Firecrawl** card (live Convex state, shows remaining credits). When paused, investigations complete from stored email/discussion evidence and note the pause in their findings; free HN monitoring keeps running. Top up credits, flip the toggle, and the competitor-research step (5) shines with live web evidence again.
+- **Firecrawl budget:** toggle web research on/off from the **Demo panel → Web research · Firecrawl** card (live Convex state, shows remaining credits). When paused, investigations complete from stored email/discussion evidence and note the pause in their findings; free HN monitoring keeps running. Top up credits, flip the toggle, and the competitor-research step (6) shines with live web evidence again.
 - The monitor cycle can also be triggered manually ("Run monitor" via chat:runMonitorNow) — deterministic keyword pre-filtering keeps noise out.

@@ -17,7 +17,7 @@ export const getCompanyInternal = internalQuery({
     if (args.company) return (await ctx.db.get(args.company)) ?? null;
     const flagged = await ctx.db
       .query("companies")
-      .filter((q: any) => q.eq(q.field("isDemo"), true))
+      .withIndex("by_isDemo", (q: any) => q.eq("isDemo", true))
       .first();
     const company = flagged ?? (await ctx.db.query("companies").first());
     return company ? { ...company, _id: company._id } : null;
@@ -31,7 +31,7 @@ export const companyForUserInternal = internalQuery({
     if (!args.userId) {
       const flagged = await ctx.db
         .query("companies")
-        .filter((q: any) => q.eq(q.field("isDemo"), true))
+        .withIndex("by_isDemo", (q: any) => q.eq("isDemo", true))
         .first();
       return flagged ?? null;
     }
@@ -44,7 +44,7 @@ export const companyForUserInternal = internalQuery({
     if (authUser && (authUser as any).email === "demo@customer-intel.app") {
       const flagged = await ctx.db
         .query("companies")
-        .filter((q: any) => q.eq(q.field("isDemo"), true))
+        .withIndex("by_isDemo", (q: any) => q.eq("isDemo", true))
         .first();
       return flagged ?? (await ctx.db.query("companies").first());
     }
@@ -69,7 +69,7 @@ export const companyForInboxInternal = internalQuery({
   handler: async (ctx, args) =>
     await ctx.db
       .query("companies")
-      .filter((q: any) => q.eq(q.field("agentInbox"), args.inboxId))
+      .withIndex("by_agentInbox", (q: any) => q.eq("agentInbox", args.inboxId))
       .first(),
 });
 

@@ -5,7 +5,7 @@ import { fetchSource } from "./agent";
 import * as firecrawl from "./lib/firecrawl";
 import * as analysis from "./lib/analysis";
 import { clamp, now } from "./lib/util";
-import { myCompanyDoc } from "./lib/tenant";
+import { myCompanyDoc, requireMyCompanyDoc } from "./lib/tenant";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Live research burst — bounded, visible Firecrawl usage for demos.
@@ -52,35 +52,46 @@ async function buildAngles(ctx: any, company: any): Promise<string[]> {
   return angles.length > 0 ? angles : FALLBACK_ANGLES;
 }
 
-export const startResearch = mutation({
-  args: { durationSec: v.optional(v.number()), company: v.optional(v.id("companies")) },
-  handler: async (ctx, args) => {
-    const company = args.company
-      ? await ctx.db.get(args.company)
-      : await myCompanyDoc(ctx as any);
-    if (!company) throw new Error("Run setup first");
-    const durationSec = Math.min(Math.max(args.durationSec ?? 120, 30), 600);
-    await ctx.db.patch(company._id, {
-      researchSession: {
-        running: true,
-        startedAt: now(),
-        endsAt: now() + durationSec * 1000,
-        iterations: 0,
-        itemsSeen: 0,
-        signalsFound: 0,
-      },
-    });
-    await ctx.db.insert("agentTasks", {
-      company: company._id,
-      type: "observe",
-      status: "running",
-      label: `Live research started — ${Math.round(durationSec / 60)} min web sweep`,
-      detail: "Fetching monitored sources + rotating product searches",
+async function beginResearch(ctx: any, company: any, requestedDuration?: number) {
+  const durationSec = Math.min(Math.max(requestedDuration ?? 120, 30), 600);
+  await ctx.db.patch(company._id, {
+    researchSession: {
+      running: true,
       startedAt: now(),
-    });
-    await ctx.scheduler.runAfter(0, internal.research.scanInbox, { company: company._id });
-    await ctx.scheduler.runAfter(0, internal.research.sweep, { company: company._id });
-    return durationSec;
+      endsAt: now() + durationSec * 1000,
+      iterations: 0,
+      itemsSeen: 0,
+      signalsFound: 0,
+    },
+  });
+  await ctx.db.insert("agentTasks", {
+    company: company._id,
+    type: "observe",
+    status: "running",
+    label: `Live research started — ${Math.round(durationSec / 60)} min web sweep`,
+    detail: "Fetching monitored sources + rotating product searches",
+    startedAt: now(),
+  });
+  await ctx.scheduler.runAfter(0, internal.research.scanInbox, { company: company._id });
+  await ctx.scheduler.runAfter(0, internal.research.sweep, { company: company._id });
+  return durationSec;
+}
+
+export const startResearch = mutation({
+  args: { durationSec: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const company = await requireMyCompanyDoc(ctx as any);
+    return await beginResearch(ctx, company, args.durationSec);
+  },
+});
+
+/** Internal entry point for onboarding/chat after the company is already pinned. */
+export const startResearchForCompany = internalMutation({
+  args: { durationSec: v.optional(v.number()), company: v.id("companies") },
+  handler: async (ctx, args) => {
+    const company = await ctx.db.get(args.company);
+    if (!company) throw new Error("Company not found");
+    return await beginResearch(ctx, company, args.durationSec);
   },
 });
 
@@ -155,7 +166,7 @@ export const listRoutedInternal = internalQuery({
 export const stopResearch = mutation({
   args: {},
   handler: async (ctx) => {
-    const company = await myCompanyDoc(ctx as any);
+    const company = await requireMyCompanyDoc(ctx as any);
     if (!company?.researchSession?.running) return "not running";
     const s = company.researchSession;
     await ctx.db.patch(company._id, {

@@ -1,4 +1,4 @@
-import { action } from "./_generated/server";
+import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import * as agentmailApi from "./lib/agentmailApi";
 
@@ -50,7 +50,7 @@ const SOURCES = [
   },
 ];
 
-export const ensureSetup = action({
+export const ensureSetup = internalAction({
   args: {},
   handler: async (ctx): Promise<{
     agentInbox: string;
